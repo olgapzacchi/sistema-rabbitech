@@ -4,8 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 import { seedData } from '../data/seed.js';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Aceita a URL mesmo se vier com caminho extra (ex.: .../rest/v1/) ou espaços
+function cleanUrl(raw) {
+  const v = String(raw || '').trim();
+  if (!v) return '';
+  try { return new URL(v).origin; } catch { return v.replace(/\/+$/, ''); }
+}
+const url = cleanUrl(import.meta.env.VITE_SUPABASE_URL);
+const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 export const supabase = url && key ? createClient(url, key) : null;
 export const isCloud = !!supabase;
 
