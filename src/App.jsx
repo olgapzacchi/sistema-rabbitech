@@ -5,7 +5,7 @@ import {
   Tv, Music, Wrench, Users, Menu, X, LogOut,
 } from 'lucide-react';
 import { isCloud, supabase, missingConfig } from './lib/supabase.js';
-import Login, { NewPassword, MissingConfig } from './pages/Login.jsx';
+import Login, { NewPassword, MissingConfig, AccessProblem } from './pages/Login.jsx';
 import Inicio from './pages/Inicio.jsx';
 import Calculadora from './pages/Calculadora.jsx';
 import Saidas from './pages/Saidas.jsx';
@@ -38,6 +38,7 @@ export default function App() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState(undefined);
   const [recovering, setRecovering] = useState(false);
+  const [access, setAccess] = useState('checking'); // checking | ok | denied | noschema
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
 
@@ -51,10 +52,23 @@ export default function App() {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  // Confere se a conta logada está liberada (public.is_team_member, ver supabase/schema.sql)
+  const userId = session?.user?.id;
+  useEffect(() => {
+    if (!isCloud || !userId) return;
+    setAccess('checking');
+    supabase.rpc('is_team_member').then(({ data, error }) => {
+      if (error) setAccess('noschema');
+      else setAccess(data ? 'ok' : 'denied');
+    });
+  }, [userId]);
+
   if (missingConfig) return <MissingConfig />;
   if (isCloud && session === undefined) return null;
   if (isCloud && recovering) return <NewPassword onDone={() => setRecovering(false)} />;
   if (isCloud && !session) return <Login />;
+  if (isCloud && access === 'checking') return null;
+  if (isCloud && access !== 'ok') return <AccessProblem kind={access} email={session.user?.email} />;
 
   return (
     <div className="shell">

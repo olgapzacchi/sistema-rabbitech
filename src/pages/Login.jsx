@@ -105,3 +105,37 @@ export function MissingConfig() {
     </div>
   );
 }
+
+export function AccessProblem({ kind, email }) {
+  return (
+    <div className="login">
+      <div className="card stack" style={{ maxWidth: 560 }}>
+        <Brand />
+        {kind === 'denied' ? (
+          <>
+            <h2 style={{ margin: 0, fontSize: 16 }}>Conta ainda não liberada</h2>
+            <p style={{ margin: 0 }}>
+              Você entrou como <b>{email}</b>, mas este e-mail não está na lista de acesso da equipe,
+              então nada pode ser lido nem salvo. Peça ao responsável para rodar no Supabase (SQL Editor):
+            </p>
+            <pre style={{ background: 'var(--bg)', padding: 10, borderRadius: 8, whiteSpace: 'pre-wrap', margin: 0 }}>
+{`insert into public.allowed_emails (email)\nvalues ('${(email || '').toLowerCase()}');`}
+            </pre>
+          </>
+        ) : (
+          <>
+            <h2 style={{ margin: 0, fontSize: 16 }}>Banco de dados não configurado</h2>
+            <p style={{ margin: 0 }}>
+              O Supabase ainda não tem o esquema atual. Rode o arquivo <code>supabase/schema.sql</code> no
+              SQL Editor do Supabase e recarregue esta página.
+            </p>
+          </>
+        )}
+        <div className="row">
+          <button className="btn primary" onClick={() => window.location.reload()}>Tentar de novo</button>
+          <button className="btn" onClick={() => supabase.auth.signOut()}>Sair e trocar de conta</button>
+        </div>
+      </div>
+    </div>
+  );
+}
