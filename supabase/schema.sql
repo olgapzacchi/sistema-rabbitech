@@ -10,7 +10,7 @@
 --   members ──< sortie_logs.member_id, improvements.member_id
 --   strategies ──< sorties ──< sortie_logs
 --   strategies ──< rounds
---   media_links ──< tv_playlist_items >── tv_playlists   (playlists da Rabbitech TV)
+--   media_links ──< tv_playlist_items >── tv_playlists   (playlists da TV e da Music)
 --   swot_items, documents (independentes)
 --
 -- Missões são identificadas pelos números 1–15 da temporada (definidos no
@@ -201,7 +201,12 @@ create table if not exists public.tv_playlist_items (
   unique (playlist_id, media_id)
 );
 
+alter table public.tv_playlists add column if not exists kind text not null default 'youtube';  -- youtube (TV) ou spotify (Music)
+do $$ begin
+  alter table public.tv_playlists add constraint tv_playlists_kind_check check (kind in ('youtube', 'spotify'));
+exception when duplicate_object then null; end $$;
 create index if not exists idx_tv_playlists_created_at    on public.tv_playlists (created_at);
+create index if not exists idx_tv_playlists_kind          on public.tv_playlists (kind, created_at);
 create index if not exists idx_tv_playlist_items_playlist on public.tv_playlist_items (playlist_id, position);
 create index if not exists idx_tv_playlist_items_media    on public.tv_playlist_items (media_id);
 create index if not exists idx_media_links_pinned         on public.media_links (kind, pinned);
