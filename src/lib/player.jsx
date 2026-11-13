@@ -1,7 +1,7 @@
 // Player global da Rabbitech Music: fica fora das páginas, então a música
 // continua tocando quando a pessoa navega para outras telas.
-import { createContext, useContext, useState } from 'react';
-import { Music, SkipBack, SkipForward, X, ListVideo } from 'lucide-react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { Music, SkipBack, SkipForward, X, ListVideo, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { spotifyEmbed } from './media.js';
 
@@ -15,38 +15,46 @@ export function MusicPlayerProvider({ children }) {
 
 export function MiniPlayer() {
   const { playing, setPlaying } = useMusicPlayer();
+  const [open, setOpen] = useState(true);
   const track = playing?.video;
+  const url = track?.url;
+  // Música nova: abre o player para a pessoa apertar o play do Spotify
+  useEffect(() => { if (url) setOpen(true); }, [url]);
   if (!track) return null;
   const src = spotifyEmbed(track.url);
   const queue = playing.queue || [];
   const idx = queue.findIndex((v) => v.id === track.id);
   const go = (d) => setPlaying({ ...playing, video: queue[idx + d] });
   return (
-    <div className="mini-player">
-      <div className="mini-info">
-        <Link to="/music" className="row" style={{ flexWrap: 'nowrap', textDecoration: 'none', color: 'inherit', minWidth: 0 }}>
-          {track.thumbnail
-            ? <img src={track.thumbnail} alt="" width="44" height="44" style={{ borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
-            : <span className="mini-icon"><Music size={18} /></span>}
-          <div style={{ minWidth: 0 }}>
-            <div className="ellipsis" style={{ fontWeight: 600 }}>{track.title}</div>
-            <div className="ellipsis muted-dark" style={{ padding: 0 }}>
-              {playing.playlistName ? <><ListVideo size={11} style={{ verticalAlign: -1 }} /> {playing.playlistName} · {idx + 1}/{queue.length}</> : track.channel}
-            </div>
-          </div>
-        </Link>
-        <div className="row" style={{ flexWrap: 'nowrap', gap: 2 }}>
-          {queue.length > 1 && <>
-            <button className="icon-btn light" disabled={idx <= 0} title="Anterior" onClick={() => go(-1)}><SkipBack size={16} /></button>
-            <button className="icon-btn light" disabled={idx < 0 || idx >= queue.length - 1} title="Próxima" onClick={() => go(1)}><SkipForward size={16} /></button>
-          </>}
-          <button className="icon-btn light" title="Fechar player" onClick={() => setPlaying(null)}><X size={16} /></button>
-        </div>
+    <div className={'glass-player' + (open ? ' open' : '')}>
+      <div className="glass-row">
+        <button className="glass-cover" onClick={() => setOpen((o) => !o)} title={open ? 'Minimizar' : 'Abrir player'}>
+          {track.thumbnail ? <img src={track.thumbnail} alt="" /> : <Music size={16} />}
+        </button>
+        <button className="glass-text" onClick={() => setOpen((o) => !o)} title={open ? 'Minimizar' : 'Abrir player'}>
+          <span className="ellipsis glass-title">{track.title}</span>
+          {open && (
+            <span className="ellipsis glass-sub">
+              {playing.playlistName ? `${playing.playlistName} · ${idx + 1}/${queue.length}` : track.channel}
+            </span>
+          )}
+        </button>
+        <span className="eq" aria-hidden="true"><i /><i /><i /></span>
+        {queue.length > 1 && open && <>
+          <button className="glass-btn" disabled={idx <= 0} title="Anterior" onClick={() => go(-1)}><SkipBack size={14} /></button>
+          <button className="glass-btn" disabled={idx < 0 || idx >= queue.length - 1} title="Próxima" onClick={() => go(1)}><SkipForward size={14} /></button>
+        </>}
+        {open && <Link to="/music" className="glass-btn" title="Ir para a Rabbitech Music"><ListVideo size={14} /></Link>}
+        <button className="glass-btn" title={open ? 'Minimizar' : 'Abrir'} onClick={() => setOpen((o) => !o)}>
+          {open ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+        </button>
+        <button className="glass-btn" title="Fechar player" onClick={() => setPlaying(null)}><X size={14} /></button>
       </div>
-      {src && (
-        <iframe key={track.url} src={src} title={track.title} className="mini-frame"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="eager" />
-      )}
+      {/* o iframe fica sempre montado (mesmo minimizado) para a música não parar */}
+      <div className="glass-frame">
+        {src && <iframe key={track.url} src={src} title={track.title}
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="eager" />}
+      </div>
     </div>
   );
 }
