@@ -181,3 +181,4 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 .login .card { width: 100%; max-width: 380px; }
 .score-box .btn { color: var(--ink); }
 @media (max-width: 700px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi strong { font-size: 22px; } }
+.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }

@@ -14,6 +14,7 @@ import Historico from './pages/Historico.jsx';
 import Analise from './pages/Analise.jsx';
 import Regras from './pages/Regras.jsx';
 import MediaPage from './pages/MediaPage.jsx';
+import TV from './pages/TV.jsx';
 import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
 
@@ -116,7 +117,7 @@ export default function App() {
           <Route path="/analise" element={<Analise />} />
           <Route path="/melhorias" element={<Melhorias />} />
           <Route path="/regras" element={<Regras />} />
-          <Route path="/tv" element={<MediaPage kind="youtube" />} />
+          <Route path="/tv" element={<TV />} />
           <Route path="/music" element={<MediaPage kind="spotify" />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="*" element={<Inicio />} />

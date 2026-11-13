@@ -173,6 +173,12 @@ create table if not exists public.media_links (
   url text not null,
   created_at timestamptz not null default now()
 );
+-- Rabbitech TV: categorias, anotações e dados do vídeo
+alter table public.media_links add column if not exists category  text not null default 'Geral';
+alter table public.media_links add column if not exists notes     text not null default '';
+alter table public.media_links add column if not exists thumbnail text not null default '';
+alter table public.media_links add column if not exists channel   text not null default '';
+alter table public.media_links add column if not exists watched   boolean not null default false;
 
 -- Colunas comuns de auditoria (adicionadas também em bancos já existentes)
 do $$
@@ -209,6 +215,7 @@ create index if not exists idx_improvements_created_at on public.improvements (c
 create index if not exists idx_improvements_member     on public.improvements (member_id);
 create index if not exists idx_documents_created_at    on public.documents (kind, created_at);
 create index if not exists idx_media_links_created_at  on public.media_links (kind, created_at);
+create index if not exists idx_media_links_category    on public.media_links (kind, category);
 
 -- ---------------------------------------------------------------------
 -- Row Level Security + Realtime
