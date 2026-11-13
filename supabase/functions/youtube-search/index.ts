@@ -3,6 +3,13 @@
 // Só membros da equipe logados podem usar: o token do usuário é validado pelo próprio
 // banco ao chamar public.is_team_member() (por isso a função roda com verify_jwt = false,
 // que é o recomendado com as novas chaves de assinatura JWT do Supabase).
+//
+// Busca precisa: o YouTube devolve resultados "parecidos" (ex.: "spike prime robots"
+// traz carros, pregos...). Por isso buscamos 50 resultados e filtramos aqui:
+//   - precisa (padrão): TODAS as palavras importantes precisam aparecer no título
+//     (ou no título + descrição, se titleOnly = false)
+//   - exclude: palavras proibidas (somem do resultado e vão como -palavra para o YouTube)
+//   - topic: "tech" restringe à categoria Ciência e Tecnologia, "edu" a Educação
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -14,37 +21,55 @@ const cors = {
 };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: cors });
 
+const STOP = new Set([
+  "a", "o", "as", "os", "um", "uma", "de", "da", "do", "das", "dos", "e", "em", "no", "na", "nos", "nas",
+  "para", "pra", "com", "por", "como", "que", "the", "an", "of", "and", "or", "in", "on", "for", "with",
+  "to", "how", "is", "video", "videos", "vídeo", "vídeos",
+]);
+const ENTITIES: Record<string, string> = { "&amp;": "&", "&quot;": '"', "&#39;": "'", "&lt;": "<", "&gt;": ">" };
+const decode = (s: string) => s.replace(/&(amp|quot|#39|lt|gt);/g, (m) => ENTITIES[m] ?? m);
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+// singular/plural simples: robots ~ robot, robôs ~ robo
+const stem = (w: string) => (w.length > 4 && w.endsWith("es") ? w.slice(0, -2) : w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w);
+const words = (s: string) => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
+const tokens = (s: string) => new Set(words(s).map(stem));
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ error: "Método não permitido." }, 405);
 
   // Confere se quem chamou é da equipe
   const auth = req.headers.get("Authorization") ?? "";
+  if (!auth.startsWith("Bearer ")) return reply({ error: "Faça login para buscar vídeos." }, 401);
   let publicKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   if (!publicKey) {
     try { publicKey = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") ?? "{}").default ?? ""; } catch { /* sem chave */ }
   }
-  if (!auth.startsWith("Bearer ")) return reply({ error: "Faça login para buscar vídeos." }, 401);
-  const sb = createClient(Deno.env.get("SUPABASE_URL")!, publicKey, {
-    global: { headers: { Authorization: auth } },
-  });
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, publicKey, { global: { headers: { Authorization: auth } } });
   const { data: ok, error: accessError } = await sb.rpc("is_team_member");
   if (accessError || !ok) return reply({ error: "Sua conta não está liberada para a equipe." }, 403);
 
   const apiKey = Deno.env.get("YOUTUBE_API_KEY");
   if (!apiKey) return reply({ error: "A busca ainda não foi configurada: falta a chave YOUTUBE_API_KEY no Supabase." }, 503);
 
-  let body: { q?: string; pageToken?: string } = {};
+  let body: { q?: string; pageToken?: string; precise?: boolean; titleOnly?: boolean; exclude?: string; topic?: string } = {};
   try { body = await req.json(); } catch { /* corpo vazio */ }
-  const q = String(body.q ?? "").trim().slice(0, 200);
+  const q = String(body.q ?? "").trim().slice(0, 150);
   if (q.length < 2) return reply({ error: "Digite pelo menos 2 letras para buscar." }, 400);
+  const precise = body.precise !== false;
+  const titleOnly = body.titleOnly !== false;
+  const excluded = words(String(body.exclude ?? "").slice(0, 150)).map(stem);
+  const required = [...new Set(words(q).filter((w) => !STOP.has(w)).map(stem))];
 
+  const ytQuery = [q, ...excluded.map((w) => `-${w}`)].join(" ");
+  const params: Record<string, string> = {
+    part: "snippet", type: "video", maxResults: "50", safeSearch: "strict", q: ytQuery, key: apiKey,
+  };
+  if (body.topic === "tech") params.videoCategoryId = "28";
+  if (body.topic === "edu") params.videoCategoryId = "27";
+  if (body.pageToken) params.pageToken = String(body.pageToken).slice(0, 100);
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
-  url.search = new URLSearchParams({
-    part: "snippet", type: "video", maxResults: "12", safeSearch: "strict",
-    relevanceLanguage: "pt", q, key: apiKey,
-    ...(body.pageToken ? { pageToken: String(body.pageToken).slice(0, 100) } : {}),
-  }).toString();
+  url.search = new URLSearchParams(params).toString();
 
   try {
     const res = await fetch(url);
@@ -57,17 +82,22 @@ Deno.serve(async (req: Request) => {
           : "O YouTube recusou a busca. Confira se a chave YOUTUBE_API_KEY está certa e com a YouTube Data API v3 ativada.",
       }, 502);
     }
-    const items = (data.items ?? [])
-      .filter((v: any) => v.id?.videoId)
-      .map((v: any) => ({
-        id: v.id.videoId,
-        url: `https://www.youtube.com/watch?v=${v.id.videoId}`,
-        title: v.snippet?.title ?? "Vídeo do YouTube",
-        channel: v.snippet?.channelTitle ?? "",
-        thumbnail: v.snippet?.thumbnails?.medium?.url ?? v.snippet?.thumbnails?.default?.url ?? "",
-        publishedAt: v.snippet?.publishedAt ?? null,
-      }));
-    return reply({ items, nextPageToken: data.nextPageToken ?? null });
+    const all = (data.items ?? []).filter((v: any) => v.id?.videoId).map((v: any) => ({
+      id: v.id.videoId,
+      url: `https://www.youtube.com/watch?v=${v.id.videoId}`,
+      title: decode(v.snippet?.title ?? "Vídeo do YouTube"),
+      channel: decode(v.snippet?.channelTitle ?? ""),
+      description: decode(v.snippet?.description ?? ""),
+      thumbnail: v.snippet?.thumbnails?.medium?.url ?? v.snippet?.thumbnails?.default?.url ?? "",
+      publishedAt: v.snippet?.publishedAt ?? null,
+    }));
+    const items = all.filter((v: any) => {
+      const t = tokens(titleOnly ? v.title : `${v.title} ${v.description}`);
+      const full = tokens(`${v.title} ${v.description}`);
+      if (excluded.some((w) => full.has(w))) return false;
+      return !precise || required.every((w) => t.has(w));
+    });
+    return reply({ items, nextPageToken: data.nextPageToken ?? null, checked: all.length, hidden: all.length - items.length });
   } catch {
     return reply({ error: "Falha ao falar com o YouTube. Tente de novo." }, 502);
   }

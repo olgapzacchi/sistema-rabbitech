@@ -10,7 +10,8 @@
 --   members ──< sortie_logs.member_id, improvements.member_id
 --   strategies ──< sorties ──< sortie_logs
 --   strategies ──< rounds
---   swot_items, documents, media_links (independentes)
+--   media_links ──< tv_playlist_items >── tv_playlists   (playlists da Rabbitech TV)
+--   swot_items, documents (independentes)
 --
 -- Missões são identificadas pelos números 1–15 da temporada (definidos no
 -- código, em src/data/missions.js), por isso ficam como listas jsonb.
@@ -179,13 +180,38 @@ alter table public.media_links add column if not exists notes     text not null 
 alter table public.media_links add column if not exists thumbnail text not null default '';
 alter table public.media_links add column if not exists channel   text not null default '';
 alter table public.media_links add column if not exists watched   boolean not null default false;
+alter table public.media_links add column if not exists pinned    boolean not null default true;  -- fixado na TV
+
+-- ---------------------------------------------------------------------
+-- Rabbitech TV: playlists
+-- ---------------------------------------------------------------------
+create table if not exists public.tv_playlists (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(trim(name)) > 0),
+  description text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.tv_playlist_items (
+  id uuid primary key default gen_random_uuid(),
+  playlist_id uuid not null references public.tv_playlists(id) on delete cascade,
+  media_id uuid not null references public.media_links(id) on delete cascade,
+  position integer not null default 0,
+  created_at timestamptz not null default now(),
+  unique (playlist_id, media_id)
+);
+
+create index if not exists idx_tv_playlists_created_at    on public.tv_playlists (created_at);
+create index if not exists idx_tv_playlist_items_playlist on public.tv_playlist_items (playlist_id, position);
+create index if not exists idx_tv_playlist_items_media    on public.tv_playlist_items (media_id);
+create index if not exists idx_media_links_pinned         on public.media_links (kind, pinned);
 
 -- Colunas comuns de auditoria (adicionadas também em bancos já existentes)
 do $$
 declare t text;
 begin
   foreach t in array array['members','team_tasks','strategies','sorties','rounds','sortie_logs',
-                           'swot_items','improvements','documents','media_links'] loop
+                           'swot_items','improvements','documents','media_links','tv_playlists','tv_playlist_items'] loop
     execute format('alter table public.%I add column if not exists updated_at timestamptz not null default now()', t);
     execute format('alter table public.%I add column if not exists created_by uuid default auth.uid() references auth.users(id) on delete set null', t);
     execute format('drop trigger if exists trg_%s_updated_at on public.%I', t, t);
@@ -224,7 +250,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['members','team_tasks','strategies','sorties','rounds','sortie_logs',
-                           'swot_items','improvements','documents','media_links'] loop
+                           'swot_items','improvements','documents','media_links','tv_playlists','tv_playlist_items'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "equipe_acesso_total" on public.%I', t);
     execute format('drop policy if exists "equipe_le" on public.%I', t);
