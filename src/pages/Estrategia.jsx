@@ -135,7 +135,7 @@ function StrategyInfo({ st, onDelete }) {
 function SortieCard({ s, editing, onEdit }) {
   const [name, setName] = useState(s.name);
   const ids = s.mission_ids || [];
-  const toggle = (id) => update('sorties', s.id, { mission_ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id].sort((a, b) => a - b) });
+  const toggle = (id) => update('sorties', s.id, { mission_ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] }); // a ordem do clique é a ordem da rota
   const pts = ids.reduce((a, id) => a + (missionById[id]?.max || 0), 0);
   return (
     <div style={{ border: '1px solid var(--line)', borderLeft: `4px solid ${s.color}`, borderRadius: 10, padding: 10 }}>
@@ -146,12 +146,21 @@ function SortieCard({ s, editing, onEdit }) {
       <div className="row" style={{ marginTop: 8, gap: 4 }}>
         {missions.map((m) => (
           <button key={m.id} title={m.name} className={'btn sm' + (ids.includes(m.id) ? ' primary' : '')} style={{ padding: '3px 7px' }} onClick={() => toggle(m.id)}>
+            {ids.includes(m.id) && <span style={{ fontSize: 10, opacity: .8, marginRight: 2 }}>{ids.indexOf(m.id) + 1}º</span>}
             M{String(m.id).padStart(2, '0')}
           </button>
         ))}
       </div>
+      {ids.length > 0 && (
+        <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+          <b>Rota:</b> Base {s.side === 'azul' ? 'azul' : 'vermelha'} → {ids.map((id) => 'M' + String(id).padStart(2, '0')).join(' → ')} → Base
+          {(s.path || []).length > 1
+            ? <> · <span className="tag">linha desenhada à mão</span> <button className="btn sm" style={{ padding: '1px 8px' }} onClick={() => update('sorties', s.id, { path: [] })}>Usar rota automática</button></>
+            : <> · <span className="tag blue">rota automática</span></>}
+        </div>
+      )}
       <div className="row" style={{ marginTop: 8 }}>
-        <button className={'btn sm' + (editing ? ' dark' : '')} onClick={onEdit}><Pencil size={14} /> {editing ? 'Desenhando…' : 'Desenhar linha'}</button>
+        <button className={'btn sm' + (editing ? ' dark' : '')} onClick={onEdit}><Pencil size={14} /> {editing ? 'Desenhando…' : 'Desenhar à mão'}</button>
         <div className="seg">
           <button className={s.side === 'vermelho' ? 'on' : ''} onClick={() => update('sorties', s.id, { side: 'vermelho' })}>Verm.</button>
           <button className={s.side === 'azul' ? 'on' : ''} onClick={() => update('sorties', s.id, { side: 'azul' })}>Azul</button>
@@ -175,6 +184,21 @@ function PathTools({ sortie }) {
   );
 }
 
+// Posição de cada missão no tapete (fração da imagem tapete.jpg, 1287×640)
+const OLD = { 1: [282, 297], 2: [225, 189], 3: [96, 158], 4: [110, 84], 5: [169, 67], 6: [431, 67], 7: [462, 67], 8: [202, 67],
+  9: [230, 67], 10: [331, 136], 11: [406, 176], 12: [529, 138], 13: [310, 169], 14: [522, 76], 15: [379, 295] };
+export const MISSION_POS = Object.fromEntries(Object.entries(OLD).map(([id, [x, y]]) => [id, [x / 620, (y - 26) / 308]]));
+// Áreas de lançamento (bases) de cada lado
+const BASE = { vermelho: [0.21, 0.84], azul: [0.79, 0.84] };
+
+// Rota automática: base → missões na ordem escolhida → volta à base
+export function autoRoute(s) {
+  const pts = (s.mission_ids || []).map((id) => MISSION_POS[id]).filter(Boolean);
+  if (!pts.length) return [];
+  const base = BASE[s.side] || BASE.vermelho;
+  return [base, ...pts, base];
+}
+
 function MatMap({ sorties, editing }) {
   const ref = useRef();
   const W = 1287, H = 640;
@@ -186,19 +210,45 @@ function MatMap({ sorties, editing }) {
     const pt = [+((e.clientX - r.left) / r.width).toFixed(4), +((e.clientY - r.top) / r.height).toFixed(4)];
     update('sorties', s.id, { path: [...(s.path || []), pt] });
   }
+  // de qual saída é cada missão (primeira que a escolheu)
+  const owner = {};
+  sorties.forEach((s) => (s.mission_ids || []).forEach((id, i) => { if (!owner[id]) owner[id] = { s, order: i + 1 }; }));
+  const P = ([x, y]) => [x * W, y * H];
   return (
     <div ref={ref} className={'mapbox' + (editing ? ' editing' : '')} onClick={click}>
       <img src="/tapete.jpg" alt="Tapete BIOGLOW" draggable={false} />
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         {sorties.map((s) => {
-          const pts = (s.path || []).map(([x, y]) => [x * W, y * H]);
+          const manual = (s.path || []).length > 1;
+          const pts = (manual ? s.path : autoRoute(s)).map(P);
           const on = editing === s.id;
+          if (pts.length < 2) return null;
+          const line = pts.map((p) => p.join(',')).join(' ');
           return (
-            <g key={s.id} opacity={editing && !on ? 0.45 : 1}>
-              {pts.length > 1 && <polyline points={pts.map((p) => p.join(',')).join(' ')} fill="none" stroke="#fff" strokeWidth={on ? 12 : 10} strokeLinejoin="round" strokeLinecap="round" />}
-              {pts.length > 1 && <polyline points={pts.map((p) => p.join(',')).join(' ')} fill="none" stroke={s.color} strokeWidth={on ? 7 : 6} strokeLinejoin="round" strokeLinecap="round" strokeDasharray={on ? '0' : '18 10'} />}
-              {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i === 0 ? 11 : 7} fill={s.color} stroke="#fff" strokeWidth="3" />)}
-              {pts[0] && <text x={pts[0][0]} y={pts[0][1] - 18} textAnchor="middle" fontSize="22" fontWeight="700" fill="#fff" stroke="#000" strokeWidth="4" paintOrder="stroke">{s.name}</text>}
+            <g key={s.id} opacity={editing && !on ? 0.35 : 1}>
+              <polyline points={line} fill="none" stroke="#fff" strokeWidth={on ? 12 : 10} strokeLinejoin="round" strokeLinecap="round" opacity=".9" />
+              <polyline points={line} fill="none" stroke={s.color} strokeWidth={on ? 7 : 6} strokeLinejoin="round" strokeLinecap="round"
+                strokeDasharray={manual ? '0' : '16 10'} />
+              {manual && pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i === 0 ? 10 : 6} fill={s.color} stroke="#fff" strokeWidth="3" />)}
+              {!manual && <circle cx={pts[0][0]} cy={pts[0][1]} r="12" fill={s.color} stroke="#fff" strokeWidth="3" />}
+              <text x={pts[0][0]} y={pts[0][1] - 20} textAnchor="middle" fontSize="22" fontWeight="700" fill="#fff" stroke="#000" strokeWidth="4" paintOrder="stroke">{s.name}</text>
+            </g>
+          );
+        })}
+        {/* marcadores das missões: coloridos = planejados, cinza = livres */}
+        {Object.entries(MISSION_POS).map(([id, pos]) => {
+          const [x, y] = P(pos);
+          const o = owner[id];
+          return (
+            <g key={id} pointerEvents="none">
+              <circle cx={x} cy={y} r={o ? 24 : 15} fill={o ? o.s.color : '#0b0f19'} fillOpacity={o ? 1 : 0.35} stroke="#fff" strokeWidth={o ? 4 : 2} />
+              <text x={x} y={y + (o ? 8 : 5)} textAnchor="middle" fontSize={o ? 22 : 14} fontWeight="800" fill="#fff">{String(id).padStart(2, '0')}</text>
+              {o && (
+                <g>
+                  <circle cx={x + 20} cy={y - 20} r="12" fill="#fff" stroke={o.s.color} strokeWidth="3" />
+                  <text x={x + 20} y={y - 14} textAnchor="middle" fontSize="15" fontWeight="800" fill="#0b0f19">{o.order}</text>
+                </g>
+              )}
             </g>
           );
         })}
