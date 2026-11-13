@@ -15,6 +15,8 @@ const cors = {
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: cors });
 
 const TYPES = ["track", "album", "playlist", "artist"] as const;
+// Apps do Spotify em "modo de desenvolvimento" aceitam no máximo 10 resultados por página.
+const PAGE = 10;
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const words = (s: string) => norm(s).split(/[^a-z0-9]+/).filter((w) => w.length > 1);
 
@@ -62,7 +64,7 @@ Deno.serve(async (req: Request) => {
   catch (e) { return reply({ error: `O Spotify recusou as credenciais (${(e as Error).message}). Confira SPOTIFY_CLIENT_ID e SPOTIFY_CLIENT_SECRET.` }, 502); }
 
   const url = new URL("https://api.spotify.com/v1/search");
-  url.search = new URLSearchParams({ q, type, limit: "20", offset: String(offset), market: "BR" }).toString();
+  url.search = new URLSearchParams({ q, type, limit: String(PAGE), offset: String(offset), market: "BR" }).toString();
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -90,6 +92,6 @@ Deno.serve(async (req: Request) => {
   const required = words(q);
   const items = body.precise === false ? all
     : all.filter((v: any) => { const t = new Set(words(`${v.title} ${v.channel}`)); return required.every((w) => t.has(w) || [...t].some((x) => x.startsWith(w))); });
-  const next = page.next ? offset + 20 : null;
+  const next = page.next ? offset + PAGE : null;
   return reply({ items, nextPageToken: next, hidden: all.length - items.length });
 });
