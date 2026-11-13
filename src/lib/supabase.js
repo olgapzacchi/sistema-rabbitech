@@ -11,8 +11,17 @@ function cleanUrl(raw) {
   try { return new URL(v).origin; } catch { return v.replace(/\/+$/, ''); }
 }
 
-export const SUPABASE_URL = cleanUrl(import.meta.env.VITE_SUPABASE_URL);
-export const SUPABASE_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+// Valores padrão do projeto Supabase da equipe. São PÚBLICOS por natureza (a chave
+// "publishable" sempre vai para o navegador); quem protege os dados são as regras RLS
+// do banco (supabase/schema.sql). As variáveis de ambiente, se existirem, têm prioridade.
+const DEFAULT_URL = 'https://gfunjxrpermmzusklfyn.supabase.co';
+const DEFAULT_KEY = 'sb_publishable__37HA7zZI3ZXNOqyZ0Miaw_-UYrobzR';
+
+// Em `npm run dev` sem .env.local o app usa o modo local (dados no navegador), para testes.
+const useDefaults = import.meta.env.PROD || import.meta.env.VITE_USE_DEFAULT_SUPABASE === 'true';
+
+export const SUPABASE_URL = cleanUrl(import.meta.env.VITE_SUPABASE_URL) || (useDefaults ? DEFAULT_URL : '');
+export const SUPABASE_KEY = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim() || (useDefaults ? DEFAULT_KEY : '');
 
 export const supabase = SUPABASE_URL && SUPABASE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_KEY, {
