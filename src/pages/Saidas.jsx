@@ -27,6 +27,9 @@ export default function Saidas() {
   async function save(e) {
     e.preventDefault();
     if (!f.mission_ids.length) return alert('Escolha ao menos uma missão.');
+    if (f.time_s !== '' && (Number(f.time_s) < 0 || Number(f.time_s) > 150)) {
+      return alert('O tempo gasto é em segundos e vai de 0 a 150 (um round inteiro tem 2:30 = 150 s). Ex.: 23.5');
+    }
     await insert('sortie_logs', { ...f, sortie_id: f.sortie_id || null, member_id: f.member_id || null, time_s: f.time_s === '' ? null : Number(f.time_s) });
     setF((x) => ({ ...x, notes: '', time_s: '' }));
   }
@@ -91,7 +94,7 @@ export default function Saidas() {
             </div>
           </div>
           <div className="grid g2">
-            <label className="field">Tempo gasto (s)<input type="number" min="0" step="0.1" value={f.time_s} onChange={(e) => set('time_s', e.target.value)} /></label>
+            <label className="field">Tempo gasto (s)<input type="number" min="0" max="150" step="0.1" placeholder="ex.: 23.5" value={f.time_s} onChange={(e) => set('time_s', e.target.value)} /></label>
             <label className="field">Quem testou
               <select value={f.member_id} onChange={(e) => set('member_id', e.target.value)}>
                 <option value="">—</option>
