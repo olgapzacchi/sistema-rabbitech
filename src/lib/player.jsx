@@ -1,9 +1,9 @@
 // Player global da Rabbitech Music: fica fora das páginas, então a música
 // continua tocando quando a pessoa navega para outras telas.
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Music, SkipBack, SkipForward, X, ListVideo, ChevronDown, ChevronUp } from 'lucide-react';
+import { Music, SkipBack, SkipForward, X, ListVideo, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { spotifyEmbed } from './media.js';
+import { spotifyEmbed, spotifyOpenUrl, isTouchDevice } from './media.js';
 
 const Ctx = createContext({ playing: null, setPlaying: () => {} });
 export const useMusicPlayer = () => useContext(Ctx);
@@ -44,12 +44,18 @@ export function MiniPlayer() {
           <button className="glass-btn" disabled={idx <= 0} title="Anterior" onClick={() => go(-1)}><SkipBack size={14} /></button>
           <button className="glass-btn" disabled={idx < 0 || idx >= queue.length - 1} title="Próxima" onClick={() => go(1)}><SkipForward size={14} /></button>
         </>}
-        {open && <Link to="/music" className="glass-btn" title="Ir para a Rabbitech Music"><ListVideo size={14} /></Link>}
+        {open && <a href={spotifyOpenUrl(track.url)} target="_blank" rel="noreferrer" className="glass-btn" title="Abrir no Spotify (música inteira)" aria-label="Abrir no Spotify"><ExternalLink size={14} /></a>}
+        {open && <Link to="/music" className="glass-btn" title="Ir para a Rabbitech Music" aria-label="Ir para a Rabbitech Music"><ListVideo size={14} /></Link>}
         <button className="glass-btn" title={open ? 'Minimizar' : 'Abrir'} onClick={() => setOpen((o) => !o)}>
           {open ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
         </button>
         <button className="glass-btn" title="Fechar player" onClick={() => setPlaying(null)}><X size={14} /></button>
       </div>
+      {open && isTouchDevice() && (
+        <a className="glass-hint" href={spotifyOpenUrl(track.url)} target="_blank" rel="noreferrer">
+          No celular o Spotify toca só 30 s aqui. <b>Toque para ouvir inteira no app ↗</b>
+        </a>
+      )}
       {/* o iframe fica sempre montado (mesmo minimizado) para a música não parar */}
       <div className="glass-frame">
         {src && <iframe key={track.url} src={src} title={track.title}

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useTable, insert, update, remove, isCloud } from '../lib/db.js';
 import { PageHead, ErrorBox, fmtDate } from '../components/ui.jsx';
-import { PROVIDERS } from '../lib/media.js';
+import { PROVIDERS, spotifyOpenUrl, isTouchDevice } from '../lib/media.js';
 import { useMusicPlayer } from '../lib/player.jsx';
 
 // Central de mídia usada pela Rabbitech TV (YouTube) e pela Rabbitech Music (Spotify)
@@ -111,7 +111,12 @@ function Player({ current, playing, setPlaying, actions }) {
           {current.thumbnail
             ? <img src={current.thumbnail} alt="" width="140" height="140" style={{ borderRadius: 10, objectFit: 'cover' }} />
             : <div style={{ width: 140, height: 140, borderRadius: 10, background: 'var(--bg)', display: 'grid', placeItems: 'center' }}><Play size={28} /></div>}
-          <div className="muted">Tocando no player lá embaixo. Pode trocar de tela que a música continua.</div>
+          <div className="stack" style={{ gap: 8 }}>
+            <div className="muted">Tocando no player lá embaixo. Pode trocar de tela que a música continua.</div>
+            {isTouchDevice() && <div className="muted" style={{ fontSize: 13 }}>No celular o Spotify só deixa tocar 30 segundos dentro de sites. Para ouvir inteira, abra no app:</div>}
+            <a className="btn" style={{ alignSelf: 'flex-start', background: '#1db954', borderColor: '#1db954', color: '#fff' }}
+              href={spotifyOpenUrl(current.url)} target="_blank" rel="noreferrer">Abrir no Spotify ↗</a>
+          </div>
         </div>
       ) : src
         ? <iframe key={current.url} className="embed" src={src} style={P.frameStyle} title={current.title}

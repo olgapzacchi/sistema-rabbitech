@@ -89,3 +89,13 @@ export const PROVIDERS = {
     types: [['track', 'Músicas'], ['album', 'Álbuns'], ['playlist', 'Playlists'], ['artist', 'Artistas']],
   },
 };
+
+// Celular/tablet: o Spotify só toca prévias de 30 s dentro de sites
+export const isTouchDevice = () => typeof window !== 'undefined'
+  && (window.matchMedia?.('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent));
+
+// Link que abre o app do Spotify no celular (ou o Spotify Web no computador)
+export function spotifyOpenUrl(url) {
+  const m = String(url).match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(?:embed\/)?(playlist|album|track|show|episode|artist)\/([A-Za-z0-9]+)/);
+  return m ? `https://open.spotify.com/${m[1]}/${m[2]}` : url;
+}

@@ -93,6 +93,7 @@ nav { padding: 8px 10px; overflow-y: auto; flex: 1; }
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; white-space: nowrap;
 }
+a.btn { text-decoration: none; }
 .btn:hover { border-color: #c9d1e0; }
 .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
 .btn.primary:hover { background: var(--blue-ink); }
@@ -220,8 +221,10 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 @keyframes eq { 0%, 100% { height: 4px; } 50% { height: 14px; } }
 .glass-player.open .eq { display: none; }
 .has-player .content { padding-bottom: 90px; }
+.glass-hint { display: block; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(29, 185, 84, .14); color: #0b5e2b; font-size: 12px; text-decoration: none; }
 @media (max-width: 900px) {
   .glass-player { left: 50%; bottom: 12px; }
   .glass-player.open { width: calc(100vw - 24px); }
+  .has-player .content { padding-bottom: 260px; }
 }
 @media (prefers-reduced-motion: reduce) { .eq i { animation: none; height: 8px; } .glass-player, .glass-frame { transition: none; } }
