@@ -182,3 +182,23 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 .score-box .btn { color: var(--ink); }
 @media (max-width: 700px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .kpi strong { font-size: 22px; } }
 .spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- player global da Music ---------- */
+.mini-player {
+  position: fixed; left: 248px; right: 0; bottom: 0; z-index: 15;
+  background: var(--black); color: #fff; display: flex; align-items: center; gap: 12px;
+  padding: 8px 16px; box-shadow: 0 -4px 16px rgba(0,0,0,.15);
+}
+.mini-info { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 300px; flex-shrink: 0; min-width: 0; }
+.mini-frame { flex: 1; height: 80px; border: 0; border-radius: 12px; min-width: 0; }
+.mini-icon { width: 44px; height: 44px; border-radius: 6px; background: #1d2433; display: grid; place-items: center; flex-shrink: 0; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-btn.light { color: #cfd6e4; }
+.icon-btn.light:hover { background: #1d2433; color: #fff; }
+.icon-btn:disabled { opacity: .35; cursor: default; }
+.has-player .content { padding-bottom: 130px; }
+@media (max-width: 900px) {
+  .mini-player { left: 0; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 10px; }
+  .mini-info { width: auto; }
+  .has-player .content { padding-bottom: 190px; }
+}

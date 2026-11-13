@@ -14,6 +14,7 @@ import Historico from './pages/Historico.jsx';
 import Analise from './pages/Analise.jsx';
 import Regras from './pages/Regras.jsx';
 import MediaHub from './pages/MediaHub.jsx';
+import { MiniPlayer, useMusicPlayer } from './lib/player.jsx';
 import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
 
@@ -38,7 +39,8 @@ export default function App() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState(undefined);
   const [recovering, setRecovering] = useState(false);
-  const [access, setAccess] = useState('checking'); // checking | ok | denied | noschema
+  const [access, setAccess] = useState('checking');
+  const music = useMusicPlayer(); // checking | ok | denied | noschema
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
 
@@ -71,7 +73,7 @@ export default function App() {
   if (isCloud && access !== 'ok') return <AccessProblem kind={access} email={session.user?.email} />;
 
   return (
-    <div className="shell">
+    <div className={'shell' + (music.playing ? ' has-player' : '')}>
       <aside className={'sidebar' + (open ? ' open' : '')}>
         <div className="brand">
           <img src="/logo.jpg" alt="" />
@@ -122,6 +124,7 @@ export default function App() {
           <Route path="*" element={<Inicio />} />
         </Routes>
       </main>
+      <MiniPlayer />
     </div>
   );
 }

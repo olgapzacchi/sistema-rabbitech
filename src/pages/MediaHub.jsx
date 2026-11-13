@@ -6,6 +6,7 @@ import {
 import { useTable, insert, update, remove, isCloud } from '../lib/db.js';
 import { PageHead, ErrorBox, fmtDate } from '../components/ui.jsx';
 import { PROVIDERS } from '../lib/media.js';
+import { useMusicPlayer } from '../lib/player.jsx';
 
 // Central de mídia usada pela Rabbitech TV (YouTube) e pela Rabbitech Music (Spotify)
 export default function MediaHub({ kind }) {
@@ -24,7 +25,10 @@ function Hub({ P }) {
   const byYtId = useMemo(() => Object.fromEntries(videos.map((v) => [P.idOf(v.url), v])), [videos, P]);
 
   const [tab, setTab] = useState('busca');
-  const [playing, setPlaying] = useState(null); // { video, queue?: [video], playlistName? }
+  // Música usa o player global (continua tocando em outras telas); vídeo toca na própria página
+  const [localPlaying, setLocalPlaying] = useState(null); // { video, queue?: [video], playlistName? }
+  const global = useMusicPlayer();
+  const [playing, setPlaying] = kind === 'spotify' ? [global.playing, global.setPlaying] : [localPlaying, setLocalPlaying];
 
   // ---------- ações ----------
   async function ensureSaved(item, { pin } = {}) {
@@ -102,7 +106,14 @@ function Player({ current, playing, setPlaying, actions }) {
           </div>
         </div>
       )}
-      {src
+      {P.kind === 'spotify' ? (
+        <div className="row" style={{ flexWrap: 'nowrap', gap: 16 }}>
+          {current.thumbnail
+            ? <img src={current.thumbnail} alt="" width="140" height="140" style={{ borderRadius: 10, objectFit: 'cover' }} />
+            : <div style={{ width: 140, height: 140, borderRadius: 10, background: 'var(--bg)', display: 'grid', placeItems: 'center' }}><Play size={28} /></div>}
+          <div className="muted">Tocando no player lá embaixo. Pode trocar de tela que a música continua.</div>
+        </div>
+      ) : src
         ? <iframe key={current.url} className="embed" src={src} style={P.frameStyle} title={current.title}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowFullScreen />
         : <div className="empty">Link inválido.</div>}
