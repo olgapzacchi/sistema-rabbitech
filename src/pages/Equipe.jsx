@@ -22,16 +22,16 @@ export default function Equipe() {
       <ErrorBox error={members.error} />
       <div className="split">
         <div className="card">
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0}>
             <table className="table">
               <thead><tr><th>Aluno</th><th>Grupo</th><th>Tarefas concluídas</th><th /></tr></thead>
               <tbody>
                 {members.rows.map((m) => (
                   <tr key={m.id}>
-                    <td><div className="row"><span className="avatar">{initials(m.name)}</span><EditText value={m.name} onSave={(v) => update('members', m.id, { name: v })} /></div></td>
-                    <td><EditText value={m.group_name || ''} placeholder="ex.: Programação" list="groups" onSave={(v) => update('members', m.id, { group_name: v })} /></td>
+                    <td><div className="row"><span className="avatar">{initials(m.name)}</span><EditText aria-label={`Nome de ${m.name}`} value={m.name} onSave={(v) => update('members', m.id, { name: v })} /></div></td>
+                    <td><EditText aria-label={`Grupo de ${m.name}`} value={m.group_name || ''} placeholder="ex.: Programação" list="groups" onSave={(v) => update('members', m.id, { group_name: v })} /></td>
                     <td>{tasks.rows.filter((t) => t.status === 'done' && (t.assignee_ids || []).includes(m.id)).length}</td>
-                    <td><button className="icon-btn" onClick={() => confirm(`Remover ${m.name}?`) && remove('members', m.id)}><Trash2 size={15} /></button></td>
+                    <td><button className="icon-btn" title="Remover aluno" aria-label="Remover aluno" onClick={() => confirm(`Remover ${m.name}?`) && remove('members', m.id)}><Trash2 size={15} /></button></td>
                   </tr>
                 ))}
               </tbody>

@@ -67,7 +67,7 @@ export default function Calculadora() {
                     );
                     if (c.choice) return (
                       <div key={k} className="cond">
-                        <select value={round.values[k] || 0} onChange={(e) => setVal(k, Number(e.target.value))} style={{ maxWidth: 280 }}>
+                        <select aria-label={c.label} value={round.values[k] || 0} onChange={(e) => setVal(k, Number(e.target.value))} style={{ maxWidth: 280 }}>
                           {c.choice.map(([label, pts], i) => <option key={i} value={i}>{label} ({pts} pts)</option>)}
                         </select>
                       </div>
@@ -82,7 +82,7 @@ export default function Calculadora() {
                   {m.special === 'architecture' && (
                     <div className="cond">
                       <span>Dock da arquitetura:</span>
-                      <select value={round.dock15} onChange={(e) => setRound((r) => ({ ...r, dock15: e.target.value }))} style={{ width: 'auto' }}>
+                      <select aria-label="Dock da arquitetura" value={round.dock15} onChange={(e) => setRound((r) => ({ ...r, dock15: e.target.value }))} style={{ width: 'auto' }}>
                         <option value="mine">Mina</option><option value="city">Cidade</option><option value="farm">Fazenda</option>
                       </select>
                     </div>
@@ -105,18 +105,18 @@ export default function Calculadora() {
           <div className="score-box">
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <div>
-                <div style={{ color: '#9aa4b8' }}>Pontuação</div>
+                <div style={{ color: '#b4bccb' }}>Pontuação</div>
                 <div className="big">{s.total}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="timer" style={{ color: left <= 30 ? '#ff8a80' : '#fff' }}>{mm}:{ss}</div>
                 <div className="row" style={{ justifyContent: 'flex-end' }}>
                   <button className="btn sm" onClick={() => setRunning((r) => !r)}>{running ? <Pause size={14} /> : <Play size={14} />}{running ? 'Pausar' : 'Iniciar'}</button>
-                  <button className="btn sm" onClick={() => { setRunning(false); setLeft(MATCH); }}><RotateCcw size={14} /></button>
+                  <button className="btn sm" title="Zerar cronômetro" aria-label="Zerar cronômetro" onClick={() => { setRunning(false); setLeft(MATCH); }}><RotateCcw size={14} /></button>
                 </div>
               </div>
             </div>
-            <div style={{ color: '#9aa4b8', marginTop: 10, fontSize: 13 }}>
+            <div style={{ color: '#b4bccb', marginTop: 10, fontSize: 13 }}>
               Missões {s.missionTotal} · precisão {s.tokenPoints} · inspeção {s.inspectionPoints} · {s.done}/15 missões
             </div>
           </div>

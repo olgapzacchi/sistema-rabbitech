@@ -55,7 +55,7 @@ export default function Regras() {
                     <FileText size={18} color="#1450d8" />
                     <button className="nav-link" style={{ color: 'var(--ink)', padding: 0, flex: 1 }} onClick={() => setView(d)}>{d.title}</button>
                     <span className="muted" style={{ fontSize: 12 }}>{fmtDate(d.created_at)}</span>
-                    <button className="icon-btn" onClick={() => confirm('Remover documento?') && remove('documents', d.id)}><Trash2 size={14} /></button>
+                    <button className="icon-btn" title="Remover documento" aria-label="Remover documento" onClick={() => confirm('Remover documento?') && remove('documents', d.id)}><Trash2 size={14} /></button>
                   </div>
                 ))}
               </div>

@@ -164,7 +164,7 @@ function VideoDetails({ v, P }) {
   return (
     <>
       <div className="row">
-        <select value={v.category || 'Geral'} onChange={(e) => update('media_links', v.id, { category: e.target.value })} style={{ width: 'auto' }}>
+        <select aria-label="Categoria" value={v.category || 'Geral'} onChange={(e) => update('media_links', v.id, { category: e.target.value })} style={{ width: 'auto' }}>
           {P.categories.map((c) => <option key={c}>{c}</option>)}
         </select>
         <button className={'btn sm' + (v.watched ? ' primary' : '')} onClick={() => update('media_links', v.id, { watched: !v.watched })}>
@@ -350,7 +350,7 @@ function AddByLink({ P, onAdd }) {
       <input type="url" required placeholder={P.linkPlaceholder} value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} />
       <div className="row" style={{ flexWrap: 'nowrap' }}>
         <input type="text" placeholder="Título" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
-        <select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} style={{ width: 'auto' }}>
+        <select aria-label="Categoria" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} style={{ width: 'auto' }}>
           {P.categories.map((c) => <option key={c}>{c}</option>)}
         </select>
         <button className="btn primary" title={P.pin}><Plus size={16} /></button>

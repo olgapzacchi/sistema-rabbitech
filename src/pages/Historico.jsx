@@ -57,7 +57,7 @@ export default function Historico() {
       </div>
       <div className="card">
         <h2>Rounds</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0}>
           <table className="table">
             <thead><tr><th>#</th><th>Data</th><th>Total</th><th>Missões</th><th>Precisão</th><th>Estratégia</th><th>Observações</th><th /></tr></thead>
             <tbody>
@@ -70,7 +70,7 @@ export default function Historico() {
                   <td>{r.token_points}</td>
                   <td>{r.strategy_id ? stName[r.strategy_id] || '—' : '—'}</td>
                   <td>{r.notes}</td>
-                  <td><button className="icon-btn" onClick={() => confirm('Excluir round?') && remove('rounds', r.id)}><Trash2 size={15} /></button></td>
+                  <td><button className="icon-btn" title="Excluir round" aria-label="Excluir round" onClick={() => confirm('Excluir round?') && remove('rounds', r.id)}><Trash2 size={15} /></button></td>
                 </tr>
               ))}
             </tbody>

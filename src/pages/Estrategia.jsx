@@ -58,7 +58,7 @@ export default function Estrategia() {
   return (
     <>
       <PageHead title="Estratégia da equipe" desc="Desenhe as saídas no tapete, separe por lado e veja a pontuação planejada.">
-        <select value={currentId} onChange={(e) => setCurrentId(e.target.value)} style={{ width: 'auto', minWidth: 200 }}>
+        <select aria-label="Estratégia" value={currentId} onChange={(e) => setCurrentId(e.target.value)} style={{ width: 'auto', minWidth: 200 }}>
           {strategies.rows.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
         <button className="btn" onClick={duplicate} title="Duplicar"><Copy size={16} /></button>
@@ -103,13 +103,13 @@ export default function Estrategia() {
 
           <div className="stack sticky">
             <div className="score-box">
-              <div style={{ color: '#9aa4b8' }}>Pontuação planejada</div>
+              <div style={{ color: '#b4bccb' }}>Pontuação planejada</div>
               <div className="big">{totals.total}</div>
               <div className="row" style={{ marginTop: 12, gap: 16 }}>
                 <div><span className="tag red">Vermelho</span> <b style={{ fontSize: 18, marginLeft: 4 }}>{totals.vermelho}</b></div>
                 <div><span className="tag blue">Azul</span> <b style={{ fontSize: 18, marginLeft: 4 }}>{totals.azul}</b></div>
               </div>
-              <div style={{ color: '#9aa4b8', fontSize: 12, marginTop: 10 }}>Soma da pontuação máxima das missões planejadas (sem repetir missão).</div>
+              <div style={{ color: '#b4bccb', fontSize: 12, marginTop: 10 }}>Soma da pontuação máxima das missões planejadas (sem repetir missão).</div>
             </div>
             <StrategyInfo key={current.id} st={current} onDelete={delStrategy} />
           </div>
@@ -140,7 +140,7 @@ function SortieCard({ s, editing, onEdit }) {
   return (
     <div style={{ border: '1px solid var(--line)', borderLeft: `4px solid ${s.color}`, borderRadius: 10, padding: 10 }}>
       <div className="row">
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name !== s.name && update('sorties', s.id, { name })} style={{ flex: 1, minWidth: 100 }} />
+        <input type="text" aria-label="Nome da saída" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name !== s.name && update('sorties', s.id, { name })} style={{ flex: 1, minWidth: 100 }} />
         <b>{pts} pts</b>
       </div>
       <div className="row" style={{ marginTop: 8, gap: 4 }}>
@@ -165,9 +165,9 @@ function SortieCard({ s, editing, onEdit }) {
           <button className={s.side === 'vermelho' ? 'on' : ''} onClick={() => update('sorties', s.id, { side: 'vermelho' })}>Verm.</button>
           <button className={s.side === 'azul' ? 'on' : ''} onClick={() => update('sorties', s.id, { side: 'azul' })}>Azul</button>
         </div>
-        <input type="color" value={s.color} onChange={(e) => update('sorties', s.id, { color: e.target.value })} style={{ width: 32, height: 30, border: 0, background: 'none' }} />
+        <input type="color" aria-label="Cor da saída" value={s.color} onChange={(e) => update('sorties', s.id, { color: e.target.value })} style={{ width: 32, height: 30, border: 0, background: 'none' }} />
         <span className="spacer" />
-        <button className="icon-btn" onClick={() => confirm('Excluir esta saída?') && remove('sorties', s.id)}><Trash2 size={15} /></button>
+        <button className="icon-btn" title="Excluir saída" aria-label="Excluir saída" onClick={() => confirm('Excluir esta saída?') && remove('sorties', s.id)}><Trash2 size={15} /></button>
       </div>
     </div>
   );

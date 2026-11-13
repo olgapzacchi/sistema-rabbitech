@@ -34,7 +34,7 @@ export default function Melhorias() {
                   <span className={'tag ' + (RESULTS[i.result]?.[1] || '')}>{RESULTS[i.result]?.[0]}</span>
                   <span className="muted">{fmtDate(i.created_at)}{i.member_id && ` · ${memberMap[i.member_id] || ''}`}</span>
                 </div>
-                <button className="icon-btn" onClick={() => confirm('Excluir?') && remove('improvements', i.id)}><Trash2 size={15} /></button>
+                <button className="icon-btn" title="Excluir melhoria" aria-label="Excluir melhoria" onClick={() => confirm('Excluir?') && remove('improvements', i.id)}><Trash2 size={15} /></button>
               </div>
               <h3 style={{ fontSize: 16, margin: '8px 0' }}>{i.title}</h3>
               <div className="grid g2">

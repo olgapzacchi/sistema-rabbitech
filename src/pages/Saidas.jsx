@@ -44,12 +44,12 @@ export default function Saidas() {
         <div className="card">
           <div className="card-head">
             <h2>Testes registrados ({logs.rows.length})</h2>
-            <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 'auto' }}>
+            <select aria-label="Filtrar por missão" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 'auto' }}>
               <option value="">Todas as missões</option>
               {missions.map((m) => <option key={m.id} value={m.id}>M{String(m.id).padStart(2, '0')} · {m.name}</option>)}
             </select>
           </div>
-          <div className="table-wrap">
+          <div className="table-wrap" tabIndex={0}>
             <table className="table">
               <thead><tr><th>Data</th><th>Missões</th><th>Resultado</th><th>Tempo</th><th>Observação</th><th /></tr></thead>
               <tbody>
@@ -62,7 +62,7 @@ export default function Saidas() {
                     <td><span className={'tag ' + WORKED[l.worked]?.[1]}>{WORKED[l.worked]?.[0]}</span></td>
                     <td>{fmtSecs(l.time_s)}</td>
                     <td>{l.notes}{l.member_id && <div className="muted" style={{ fontSize: 12 }}>por {memberMap[l.member_id]}</div>}</td>
-                    <td><button className="icon-btn" onClick={() => confirm('Excluir registro?') && remove('sortie_logs', l.id)}><Trash2 size={15} /></button></td>
+                    <td><button className="icon-btn" title="Excluir registro" aria-label="Excluir registro" onClick={() => confirm('Excluir registro?') && remove('sortie_logs', l.id)}><Trash2 size={15} /></button></td>
                   </tr>
                 ))}
               </tbody>

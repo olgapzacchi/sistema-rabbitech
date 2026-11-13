@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "playwright test",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:report": "playwright show-report"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,8 @@
     "recharts": "^2.13.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^5.4.11"
   },

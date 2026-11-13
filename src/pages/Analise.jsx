@@ -33,7 +33,7 @@ export default function Analise() {
       <ErrorBox error={swot.error} />
       <div className="card" style={{ marginBottom: 16 }}>
         <h2>Missões do tapete</h2>
-        <div className="table-wrap">
+        <div className="table-wrap" tabIndex={0}>
           <table className="table">
             <thead><tr><th>Missão</th><th>Testes</th><th style={{ width: '35%' }}>Taxa de sucesso</th><th>Média nos rounds</th></tr></thead>
             <tbody>
@@ -75,12 +75,12 @@ function Quadrant({ q, items }) {
       <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>{q.hint}</div>
       <ul>
         {items.map((i) => (
-          <li key={i.id}><span>{i.text}</span><button className="icon-btn" onClick={() => remove('swot_items', i.id)}><X size={14} /></button></li>
+          <li key={i.id}><span>{i.text}</span><button className="icon-btn" title="Remover item" aria-label="Remover item" onClick={() => remove('swot_items', i.id)}><X size={14} /></button></li>
         ))}
       </ul>
       <form className="row" style={{ marginTop: 8, flexWrap: 'nowrap' }} onSubmit={add}>
         <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Adicionar item…" />
-        <button className="btn sm"><Plus size={14} /></button>
+        <button className="btn sm" title="Adicionar" aria-label={`Adicionar em ${q.label}`}><Plus size={14} /></button>
       </form>
     </div>
   );

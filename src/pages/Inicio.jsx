@@ -80,7 +80,7 @@ export default function Inicio() {
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-head">
           <h2>Kanban</h2>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 'auto' }}>
+          <select aria-label="Filtrar por aluno" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 'auto' }}>
             <option value="">Todos os alunos</option>
             {members.rows.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>

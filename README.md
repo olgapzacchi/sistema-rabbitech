@@ -71,6 +71,24 @@ insert into public.allowed_emails (email) values ('professora@escola.br'), ('alu
 
 Depois: Deployments → ⋯ → **Redeploy**. Framework: Vite (detectado). Build: `npm run build`, saída: `dist`.
 
+## Testes automáticos
+
+Um robô (Playwright) abre o site no computador e no celular e:
+- **explora todas as telas**: clica em todos os botões seguros, procura erros de JavaScript, imagens quebradas,
+  páginas mais largas que a tela, lentidão e problemas de acessibilidade (axe);
+- **testa os fluxos**: Kanban, Calculadora → Histórico, Registro de saídas, Estratégia (mapa), SWOT, Melhorias,
+  Equipe, Regras, TV e Music.
+
+Os testes usam o modo local (dados no navegador), então **nunca mexem no banco real**.
+
+```bash
+npm test               # roda tudo e gera test-results/RELATORIO.md
+npm run test:report    # abre o relatório visual com prints das falhas
+```
+
+No GitHub, os testes rodam sozinhos a cada atualização (aba **Actions → Testes automáticos**).
+O resumo aparece na própria página da execução e o relatório completo fica em **Artifacts**.
+
 ## Tecnologia
 
 React 18 + Vite · React Router · Recharts · Supabase (Postgres, Auth, Storage, Realtime) · Vercel.

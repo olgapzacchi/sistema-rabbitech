@@ -86,7 +86,7 @@ export default function App() {
         <nav>
           {NAV.map((n, i) =>
             n.section ? <div key={i} className="nav-section">{n.section}</div> : (
-              <NavLink key={n.to} to={n.to} end={n.end} className="nav-link">
+              <NavLink key={n.to} to={n.to} end={n.end} className="nav-link" onClick={() => setOpen(false)}>
                 <n.icon size={18} /> <span>{n.label}</span>
               </NavLink>
             )
