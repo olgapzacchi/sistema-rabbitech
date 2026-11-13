@@ -1,26 +1,31 @@
-// Camada de dados: usa o Supabase quando VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY
-// estão definidos; caso contrário, salva no navegador (modo demonstração).
-import { createClient } from '@supabase/supabase-js';
+// Camada de dados da aplicação.
+// - Com Supabase configurado: lê/grava nas tabelas do banco (ver supabase/schema.sql)
+//   e recebe atualizações em tempo real de outros usuários.
+// - Sem Supabase em `npm run dev`: modo local, salva no navegador (para testes).
 import { useCallback, useEffect, useState } from 'react';
+import { supabase, isCloud } from './supabase.js';
 import { seedData } from '../data/seed.js';
 
-// Aceita a URL mesmo se vier com caminho extra (ex.: .../rest/v1/) ou espaços
-function cleanUrl(raw) {
-  const v = String(raw || '').trim();
-  if (!v) return '';
-  try { return new URL(v).origin; } catch { return v.replace(/\/+$/, ''); }
-}
-const url = cleanUrl(import.meta.env.VITE_SUPABASE_URL);
-const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
-export const supabase = url && key ? createClient(url, key) : null;
-export const isCloud = !!supabase;
+export { supabase, isCloud };
 
-const listeners = new Map(); // table -> Set<fn>
+// Campos controlados pelo banco: nunca são enviados pelo app
+const SERVER_FIELDS = ['id', 'created_at', 'updated_at', 'created_by'];
+const clean = (row) => Object.fromEntries(Object.entries(row).filter(([k]) => !SERVER_FIELDS.includes(k)));
+
+// ---------- avisos entre componentes da mesma aba ----------
+const listeners = new Map(); // tabela -> Set<fn>
 function notify(table) { (listeners.get(table) || new Set()).forEach((fn) => fn()); }
 function subscribe(table, fn) {
   if (!listeners.has(table)) listeners.set(table, new Set());
   listeners.get(table).add(fn);
   return () => listeners.get(table).delete(fn);
+}
+
+function fail(action, table, error) {
+  const msg = error?.message || String(error);
+  console.error(`[db] ${action} ${table}:`, error);
+  if (typeof window !== 'undefined') window.alert(`Não foi possível ${action} (${table}): ${msg}`);
+  throw error;
 }
 
 // ---------- modo local ----------
@@ -41,76 +46,80 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) 
 
 // ---------- API genérica ----------
 export async function list(table) {
-  if (supabase) {
-    const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: true });
-    if (error) throw error;
-    return data;
-  }
-  return readLocal(table);
+  if (!isCloud) return readLocal(table);
+  const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
 }
 
 export async function insert(table, row) {
-  const full = { id: uid(), created_at: new Date().toISOString(), ...row };
-  if (supabase) {
-    const { data, error } = await supabase.from(table).insert(full).select().single();
-    if (error) throw error;
+  if (!isCloud) {
+    const full = { ...clean(row), id: uid(), created_at: new Date().toISOString() };
+    writeLocal(table, [...readLocal(table), full]);
     notify(table);
-    return data;
+    return full;
   }
-  writeLocal(table, [...readLocal(table), full]);
+  const { data, error } = await supabase.from(table).insert(clean(row)).select().single();
+  if (error) fail('salvar', table, error);
   notify(table);
-  return full;
+  return data;
 }
 
 export async function update(table, id, patch) {
-  if (supabase) {
-    const { error } = await supabase.from(table).update(patch).eq('id', id);
-    if (error) throw error;
+  if (!isCloud) {
+    writeLocal(table, readLocal(table).map((r) => (r.id === id ? { ...r, ...clean(patch) } : r)));
   } else {
-    writeLocal(table, readLocal(table).map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    const { error } = await supabase.from(table).update(clean(patch)).eq('id', id);
+    if (error) fail('atualizar', table, error);
   }
   notify(table);
 }
 
 export async function remove(table, id) {
-  if (supabase) {
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) throw error;
-  } else {
+  if (!isCloud) {
     writeLocal(table, readLocal(table).filter((r) => r.id !== id));
+  } else {
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) fail('excluir', table, error);
   }
   notify(table);
 }
 
+// Upload para o bucket "documentos" (tela Regras)
 export async function uploadFile(file) {
-  if (!supabase) return URL.createObjectURL(file); // local: só vale nesta sessão
-  const path = `${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
-  const { error } = await supabase.storage.from('documentos').upload(path, file);
-  if (error) throw error;
+  if (!isCloud) return URL.createObjectURL(file); // local: só vale nesta aba
+  const path = `${new Date().toISOString().slice(0, 10)}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+  const { error } = await supabase.storage.from('documentos').upload(path, file, { contentType: file.type });
+  if (error) fail('enviar o arquivo', 'documentos', error);
   return supabase.storage.from('documentos').getPublicUrl(path).data.publicUrl;
 }
 
-// Hook: lista reativa de uma tabela
+// ---------- hook reativo ----------
+let channelSeq = 0;
 export function useTable(table) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const load = useCallback(() => {
     list(table)
-      .then((d) => { setRows(d || []); setError(null); })
+      .then((d) => { setRows(d); setError(null); })
       .catch((e) => setError(e.message || String(e)))
       .finally(() => setLoading(false));
   }, [table]);
+
   useEffect(() => {
     load();
     const off = subscribe(table, load);
     let channel;
-    if (supabase) {
-      channel = supabase.channel('rt-' + table)
+    if (isCloud) {
+      channel = supabase
+        .channel(`rt-${table}-${++channelSeq}`)
         .on('postgres_changes', { event: '*', schema: 'public', table }, load)
         .subscribe();
     }
     return () => { off(); if (channel) supabase.removeChannel(channel); };
   }, [table, load]);
+
   return { rows, loading, error, reload: load };
 }

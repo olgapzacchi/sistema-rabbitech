@@ -25,27 +25,54 @@ Removidos da v1: ranking público e o player de música antigo.
 
 ```bash
 npm install
+cp .env.example .env.local   # preencha com os dados do Supabase (opcional em dev)
 npm run dev
 ```
 
-Sem configurar o Supabase, o site roda em **modo local** (dados salvos só no navegador) — bom para testar.
+Sem `.env.local`, o `npm run dev` roda em **modo local** (dados só no navegador). Em produção o Supabase é obrigatório: sem as variáveis o site mostra uma tela avisando.
 
-## Banco de dados (novo projeto Supabase)
+## Banco de dados (Supabase)
 
-1. Crie um projeto novo em https://supabase.com.
-2. Em **SQL Editor**, cole e rode `supabase/migrations/20261112000000_rabbitech_v2_schema.sql`.
-3. Em **Project Settings → API**, copie a *Project URL* e a *anon public key*.
-4. Crie `.env.local` a partir de `.env.example` com esses valores.
-5. Em **Authentication → Users**, crie as contas da equipe (ou use “Criar conta” na tela de login).
+O esquema completo fica em **`supabase/schema.sql`**: 10 tabelas, relacionamentos, índices, RLS, storage e dados iniciais. Pode ser rodado de novo sem perder dados.
 
-## Publicar na Vercel
+| Tabela | Tela | Observações |
+| --- | --- | --- |
+| `members` | Equipe | 10 alunos já cadastrados |
+| `team_tasks` | Início (Kanban) | `assignee_ids` = lista de ids de `members` |
+| `strategies` | Estratégia | |
+| `sorties` | Estratégia | → `strategies` (apaga junto), lado, missões, linha no mapa |
+| `rounds` | Calculadora / Histórico | → `strategies` (opcional) |
+| `sortie_logs` | Registro de saídas | → `sorties`, → `members` |
+| `swot_items` | Análise / SWOT | |
+| `improvements` | Melhorias | → `members` |
+| `documents` | Regras | arquivos no bucket `documentos` |
+| `media_links` | Rabbitech TV / Music | `kind` = youtube ou spotify |
 
-1. Importe este repositório na Vercel (framework: Vite).
-2. Em **Settings → Environment Variables**, adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
-3. Deploy. O `vercel.json` já cuida das rotas.
+**Quem acessa:** só usuários logados. Para limitar à equipe, cadastre os e-mails em `allowed_emails`. Enquanto a lista estiver vazia, qualquer conta criada no site entra.
+
+```sql
+insert into public.allowed_emails (email) values ('professora@escola.br'), ('aluno@escola.br');
+```
+
+## Checklist de configuração
+
+**Supabase**
+1. SQL Editor → New query → cole todo o `supabase/schema.sql` → Run (deve aparecer *Success*).
+2. Authentication → URL Configuration → *Site URL* = endereço do site na Vercel (ex.: `https://sistema-rabbitech-v2.vercel.app`) e adicione o mesmo em *Redirect URLs*.
+3. (Opcional) Authentication → Sign In / Providers → Email → desligue *Confirm email* para entrar sem confirmar.
+4. Depois que todos tiverem conta: cadastre os e-mails em `allowed_emails` (SQL acima) e, se quiser, desative novos cadastros (*Allow new users to sign up*).
+
+**Vercel** (Project → Settings → Environment Variables, para Production/Preview/Development)
+
+| Nome | Valor |
+| --- | --- |
+| `VITE_SUPABASE_URL` | `https://SEU-PROJETO.supabase.co` (Data API → Project URL) |
+| `VITE_SUPABASE_ANON_KEY` | Publishable key `sb_publishable_...` (API Keys) — **nunca** a Secret key |
+
+Depois: Deployments → ⋯ → **Redeploy**. Framework: Vite (detectado). Build: `npm run build`, saída: `dist`.
 
 ## Tecnologia
 
 React 18 + Vite · React Router · Recharts · Supabase (Postgres, Auth, Storage, Realtime) · Vercel.
 
-Código organizado em `src/pages` (uma tela por arquivo), `src/lib/scoring.js` (regras de pontuação) e `src/lib/db.js` (acesso aos dados).
+Código: `src/pages` (uma tela por arquivo), `src/lib/scoring.js` (pontuação), `src/lib/supabase.js` (cliente Supabase) e `src/lib/db.js` (leitura/gravação + tempo real).

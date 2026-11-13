@@ -38,8 +38,7 @@ export default function Estrategia() {
     if (!current) return;
     const st = await insert('strategies', { name: current.name + ' (cópia)', notes: current.notes, plan_b: current.plan_b });
     for (const s of mine) {
-      const { id, created_at, ...rest } = s;
-      await insert('sorties', { ...rest, strategy_id: st.id });
+      await insert('sorties', { ...s, strategy_id: st.id }); // id/datas são gerados pelo banco
     }
     setCurrentId(st.id);
   }

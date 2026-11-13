@@ -4,8 +4,8 @@ import {
   LayoutDashboard, Calculator, ClipboardList, Map, History, Grid2x2, BookOpen,
   Tv, Music, Wrench, Users, Menu, X, LogOut,
 } from 'lucide-react';
-import { isCloud, supabase } from './lib/db.js';
-import Login from './pages/Login.jsx';
+import { isCloud, supabase, missingConfig } from './lib/supabase.js';
+import Login, { NewPassword, MissingConfig } from './pages/Login.jsx';
 import Inicio from './pages/Inicio.jsx';
 import Calculadora from './pages/Calculadora.jsx';
 import Saidas from './pages/Saidas.jsx';
@@ -37,17 +37,23 @@ const NAV = [
 export default function App() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState(undefined);
+  const [recovering, setRecovering] = useState(false);
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
 
   useEffect(() => {
     if (!isCloud) { setSession(null); return; }
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    const { data } = supabase.auth.onAuthStateChange((event, s) => {
+      setSession(s);
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
+    });
     return () => data.subscription.unsubscribe();
   }, []);
 
+  if (missingConfig) return <MissingConfig />;
   if (isCloud && session === undefined) return null;
+  if (isCloud && recovering) return <NewPassword onDone={() => setRecovering(false)} />;
   if (isCloud && !session) return <Login />;
 
   return (
@@ -72,7 +78,10 @@ export default function App() {
         </nav>
         <div className="sidebar-foot">
           {isCloud ? (
-            <button className="nav-link" onClick={() => supabase.auth.signOut()}><LogOut size={18} /> <span>Sair</span></button>
+            <>
+              <small className="muted-dark" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{session?.user?.email}</small>
+              <button className="nav-link" onClick={() => supabase.auth.signOut()}><LogOut size={18} /> <span>Sair</span></button>
+            </>
           ) : (
             <small className="muted-dark">Modo local: dados salvos neste navegador.</small>
           )}
