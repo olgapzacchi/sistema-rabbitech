@@ -132,3 +132,6 @@ where not exists (select 1 from public.members);
 
 insert into public.strategies (name)
 select 'Estratégia principal' where not exists (select 1 from public.strategies);
+
+-- Faz a API do Supabase enxergar as tabelas novas na hora
+notify pgrst, 'reload schema';
