@@ -47,7 +47,7 @@ as $$
     )
   );
 $$;
-revoke all on function public.is_team_member() from public;
+revoke all on function public.is_team_member() from public, anon;
 grant execute on function public.is_team_member() to authenticated;
 
 -- updated_at automático
