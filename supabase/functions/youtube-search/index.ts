@@ -28,7 +28,7 @@ const STOP = new Set([
 ]);
 const ENTITIES: Record<string, string> = { "&amp;": "&", "&quot;": '"', "&#39;": "'", "&lt;": "<", "&gt;": ">" };
 const decode = (s: string) => s.replace(/&(amp|quot|#39|lt|gt);/g, (m) => ENTITIES[m] ?? m);
-const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 // singular/plural simples: robots ~ robot, robôs ~ robo
 const stem = (w: string) => (w.length > 4 && w.endsWith("es") ? w.slice(0, -2) : w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w);
 const words = (s: string) => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
@@ -75,12 +75,20 @@ Deno.serve(async (req: Request) => {
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok) {
-      const reason = data?.error?.errors?.[0]?.reason ?? "";
-      return reply({
-        error: reason === "quotaExceeded"
-          ? "A cota diária da busca do YouTube acabou. Tente amanhã."
-          : "O YouTube recusou a busca. Confira se a chave YOUTUBE_API_KEY está certa e com a YouTube Data API v3 ativada.",
-      }, 502);
+      const reason = data?.error?.errors?.[0]?.reason ?? data?.error?.status ?? "";
+      const detail = String(data?.error?.message ?? "").slice(0, 300);
+      console.error("YouTube recusou:", res.status, reason, detail);
+      const msgs: Record<string, string> = {
+        quotaExceeded: "A cota diária da busca do YouTube acabou. Tente amanhã.",
+        keyInvalid: "A chave YOUTUBE_API_KEY é inválida. Copie de novo no Google Cloud (Credentials) e salve no Supabase.",
+        API_KEY_INVALID: "A chave YOUTUBE_API_KEY é inválida. Copie de novo no Google Cloud (Credentials) e salve no Supabase.",
+        accessNotConfigured: "A YouTube Data API v3 não está ativada no projeto do Google Cloud dessa chave.",
+        SERVICE_DISABLED: "A YouTube Data API v3 não está ativada no projeto do Google Cloud dessa chave.",
+        forbidden: "A chave tem restrição que bloqueia o servidor. No Google Cloud, em Application restrictions, use “None”.",
+        ipRefererBlocked: "A chave tem restrição de site/IP. No Google Cloud, em Application restrictions, use “None”.",
+        API_KEY_HTTP_REFERRER_BLOCKED: "A chave tem restrição de site. No Google Cloud, em Application restrictions, use “None”.",
+      };
+      return reply({ error: msgs[reason] ?? `O YouTube recusou a busca (${reason || res.status}): ${detail}` }, 502);
     }
     const all = (data.items ?? []).filter((v: any) => v.id?.videoId).map((v: any) => ({
       id: v.id.videoId,
