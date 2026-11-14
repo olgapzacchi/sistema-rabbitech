@@ -205,7 +205,7 @@ function VideoRow({ v, active, onPlay, children, thumbOf = () => '' }) {
 function SearchPanel({ byYtId, onPlay, actions }) {
   const P = actions.P;
   const [q, setQ] = useState('');
-  const [opts, setOpts] = useState({ precise: true, titleOnly: true, exclude: '', topic: '', type: 'track' });
+  const [opts, setOpts] = useState({ precise: P.kind !== 'ytmusic', titleOnly: true, exclude: '', topic: '', type: 'track', musicOnly: true });
   const [showOpts, setShowOpts] = useState(false);
   const [res, setRes] = useState({ items: [], next: null, hidden: 0, lastQ: '' });
   const [busy, setBusy] = useState(false);
@@ -247,6 +247,12 @@ function SearchPanel({ byYtId, onPlay, actions }) {
           <input type="checkbox" checked={opts.precise} onChange={(e) => setOpts({ ...opts, precise: e.target.checked })} />
           <span><b>Busca precisa</b>: só mostra resultados com <i>todas</i> as palavras buscadas</span>
         </label>
+        {P.kind === 'ytmusic' && (
+          <label className="cond" style={{ padding: 0 }}>
+            <input type="checkbox" checked={opts.musicOnly} onChange={(e) => setOpts({ ...opts, musicOnly: e.target.checked })} />
+            <span><b>Só músicas</b>: tira reações, aulas, karaokê, compilações de horas e vídeos curtos; áudios oficiais aparecem primeiro</span>
+          </label>
+        )}
         {showOpts && !P.hasTypes && (
           <div className="stack" style={{ gap: 10, background: 'var(--bg)', padding: 12, borderRadius: 8 }}>
             <label className="cond" style={{ padding: 0 }}>
@@ -274,7 +280,7 @@ function SearchPanel({ byYtId, onPlay, actions }) {
       {res.lastQ && !busy && !err && (
         <small className="muted">
           {res.items.length} resultado(s) para “{res.lastQ}”
-          {res.hidden > 0 && ` · ${res.hidden} escondido(s) pelo filtro preciso`}
+          {res.hidden > 0 && ` · ${res.hidden} escondido(s) pelos filtros`}
         </small>
       )}
       {res.items.length > 0 && (
@@ -285,6 +291,8 @@ function SearchPanel({ byYtId, onPlay, actions }) {
             return (
               <VideoRow key={v.id} v={v} thumbOf={P.thumbOf} onPlay={() => onPlay(shown)}>
                 <button className="btn sm" onClick={() => onPlay(shown)}><Play size={12} /> {P.play}</button>
+                {v.duration && <span className="tag">{v.duration}</span>}
+                {v.official && <span className="tag green" title="Canal oficial do artista ou áudio oficial">oficial</span>}
                 <PinButton video={shown} actions={actions} small />
                 <PlaylistPicker video={shown} actions={actions} small />
               </VideoRow>

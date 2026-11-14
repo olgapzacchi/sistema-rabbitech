@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("YOUTUBE_API_KEY");
   if (!apiKey) return reply({ error: "A busca ainda não foi configurada: falta a chave YOUTUBE_API_KEY no Supabase." }, 503);
 
-  let body: { q?: string; pageToken?: string; precise?: boolean; titleOnly?: boolean; exclude?: string; topic?: string } = {};
+  let body: { q?: string; pageToken?: string; precise?: boolean; titleOnly?: boolean; exclude?: string; topic?: string; musicOnly?: boolean } = {};
   try { body = await req.json(); } catch { /* corpo vazio */ }
   const q = String(body.q ?? "").trim().slice(0, 150);
   if (q.length < 2) return reply({ error: "Digite pelo menos 2 letras para buscar." }, 400);
@@ -67,7 +67,12 @@ Deno.serve(async (req: Request) => {
   };
   if (body.topic === "tech") params.videoCategoryId = "28";
   if (body.topic === "edu") params.videoCategoryId = "27";
-  if (body.topic === "music") params.videoCategoryId = "10";
+  const musicOnly = body.topic === "music" && body.musicOnly !== false;
+  if (body.topic === "music") {
+    params.videoCategoryId = "10";
+    params.videoEmbeddable = "true";   // só vídeos que tocam dentro do site
+    params.videoSyndicated = "true";
+  }
   if (body.pageToken) params.pageToken = String(body.pageToken).slice(0, 100);
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
   url.search = new URLSearchParams(params).toString();
@@ -106,7 +111,28 @@ Deno.serve(async (req: Request) => {
       if (excluded.some((w) => full.has(w))) return false;
       return !precise || required.every((w) => t.has(w));
     });
-    return reply({ items, nextPageToken: data.nextPageToken ?? null, checked: all.length, hidden: all.length - items.length });
+    if (!musicOnly || !items.length) {
+      return reply({ items, nextPageToken: data.nextPageToken ?? null, checked: all.length, hidden: all.length - items.length });
+    }
+
+    // ---- Só músicas: confere duração e categoria de cada vídeo (1 unidade de cota a mais) ----
+    const det = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${items.map((v: any) => v.id).join(",")}&key=${apiKey}`)
+      .then((r) => r.json()).catch(() => ({}));
+    const info = new Map((det.items ?? []).map((v: any) => [v.id, v]));
+    const secs = (iso: string) => { const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso || "") || []; return (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0); };
+    const fmt = (n: number) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+    // vídeos que não são a música em si
+    const NOT_SONG = /\b(react|reacao|reagindo|reaction|tutorial|aula|como tocar|how to play|cifra|karaoke|gameplay|podcast|entrevista|interview|documentario|documentary|making of|bastidores|analise|review|unboxing|trailer|shorts?|tiktok|compilation|compilacao|mix completo|1 hora|1 hour|10 hours|playlist completa|ao vivo completo|full album|album completo)\b/;
+    const songs = items.map((v: any) => {
+      const d = info.get(v.id) as any;
+      const dur = secs(d?.contentDetails?.duration);
+      const channel = String(v.channel || "");
+      const title = norm(`${v.title}`);
+      const official = / - topic$/i.test(channel) || /vevo$/i.test(channel) || /official (audio|music video|video)|audio oficial|clipe oficial|video oficial/.test(title);
+      return { ...v, seconds: dur, duration: dur ? fmt(dur) : "", official, category: d?.snippet?.categoryId };
+    }).filter((v: any) => v.category === "10" && v.seconds >= 60 && v.seconds <= 600 && !NOT_SONG.test(norm(v.title)))
+      .sort((a: any, b: any) => Number(b.official) - Number(a.official));
+    return reply({ items: songs, nextPageToken: data.nextPageToken ?? null, checked: all.length, hidden: all.length - songs.length });
   } catch {
     return reply({ error: "Falha ao falar com o YouTube. Tente de novo." }, 502);
   }
