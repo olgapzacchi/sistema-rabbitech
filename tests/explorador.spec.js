@@ -79,7 +79,7 @@ test('menu lateral leva a todas as telas', async ({ page, isMobile }) => {
   await freshStart(page);
   for (const [route, name] of PAGES) {
     if (isMobile) await page.getByRole('button', { name: 'Abrir menu' }).click();
-    await page.locator('nav').getByRole('link', { name, exact: true }).click();
+    await page.locator('aside').getByRole('link', { name, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(route === '/' ? '/$' : route + '$'));
     await expect(page.locator('h1')).toBeVisible();
   }

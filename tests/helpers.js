@@ -4,7 +4,7 @@ import path from 'node:path';
 export const PAGES = [
   ['/', 'Início'], ['/calculadora', 'Calculadora'], ['/saidas', 'Registro de saídas'], ['/estrategia', 'Estratégia'],
   ['/historico', 'Histórico'], ['/analise', 'Análise / SWOT'], ['/melhorias', 'Melhorias'], ['/codigo', 'Código do robô'], ['/regras', 'Regras'],
-  ['/tv', 'Rabbitech TV'], ['/music', 'Rabbitech Music'], ['/perfis', 'Perfis'], ['/calendario', 'Calendário'], ['/equipe', 'Equipe'],
+  ['/tv', 'Rabbitech TV'], ['/music', 'Rabbitech Music'], ['/perfis', 'Perfis'], ['/calendario', 'Calendário'], ['/configuracoes', 'Configurações'], ['/equipe', 'Equipe'],
 ];
 
 // Coleta erros do navegador enquanto o teste roda

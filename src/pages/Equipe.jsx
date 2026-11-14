@@ -60,13 +60,12 @@ export default function Equipe() {
           </div>
         </div>
       </div>
-      {isCloud && <AccessAdmin />}
     </>
   );
 }
 
 // ---------- acesso à plataforma (e-mails da equipe) e configurações ----------
-function AccessAdmin() {
+export function AccessAdmin() {
   const { team, isAdmin, isPlatformAdmin, reload } = useTeam();
   const [people, setPeople] = useState([]);
   const [email, setEmail] = useState('');

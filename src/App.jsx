@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calculator, ClipboardList, Map, History, Grid2x2, BookOpen,
-  Tv, Music, Wrench, Users, Menu, X, LogOut, Code2, IdCard, CalendarDays, ChevronDown,
+  Tv, Music, Wrench, Users, Menu, X, LogOut, Code2, IdCard, CalendarDays, ChevronDown, Settings,
 } from 'lucide-react';
 import { isCloud, supabase, missingConfig } from './lib/supabase.js';
 import Login, { NewPassword, MissingConfig, AccessProblem } from './pages/Login.jsx';
@@ -21,7 +21,7 @@ import Equipe from './pages/Equipe.jsx';
 import Codigo from './pages/Codigo.jsx';
 import Perfis from './pages/Perfis.jsx';
 import Calendario from './pages/Calendario.jsx';
-import PushToggle from './components/PushToggle.jsx';
+import Configuracoes from './pages/Configuracoes.jsx';
 import { guardarConvitePendente, pegarConvitePendente } from './components/Convites.jsx';
 
 const NAV = [
@@ -150,15 +150,13 @@ function Shell({ session }) {
           })}
         </nav>
         <div className="sidebar-foot">
-          {isCloud ? (
-            <>
-              <PushToggle email={session?.user?.email?.toLowerCase()} />
-              <small className="muted-dark" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{session?.user?.email}</small>
-              <button className="nav-link" onClick={() => supabase.auth.signOut()}><LogOut size={18} /> <span>Sair</span></button>
-            </>
-          ) : (
-            <small className="muted-dark">Modo local: dados salvos neste navegador.</small>
-          )}
+          {isCloud && <small className="muted-dark ellipsis" style={{ marginBottom: 4 }}>{session?.user?.email}</small>}
+          <div className="foot-row">
+            {isCloud
+              ? <button className="nav-link" onClick={() => supabase.auth.signOut()}><LogOut size={18} /> <span>Sair</span></button>
+              : <small className="muted-dark" style={{ flex: 1 }}>Modo local: dados salvos neste navegador.</small>}
+            <NavLink to="/configuracoes" className="nav-link foot-gear" aria-label="Configurações" title="Configurações"><Settings size={18} /></NavLink>
+          </div>
         </div>
       </aside>
       {open && <div className="backdrop" onClick={() => setOpen(false)} />}
@@ -180,6 +178,7 @@ function Shell({ session }) {
           <Route path="/music" element={<MediaHub kind="ytmusic" />} />
           <Route path="/calendario" element={<Calendario />} />
           <Route path="/perfis" element={<Perfis />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/codigo" element={<Codigo />} />
           <Route path="*" element={<Inicio />} />

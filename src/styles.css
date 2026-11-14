@@ -51,6 +51,9 @@ nav { padding: 8px 10px; overflow-y: auto; flex: 1; }
   color: #cfd6e4; text-decoration: none; font-weight: 500; width: 100%;
   background: none; border: 0; cursor: pointer; text-align: left;
 }
+.foot-row { display: flex; align-items: center; gap: 6px; }
+.foot-row .nav-link { flex: 1; }
+.nav-link.foot-gear { flex: 0 0 auto; width: auto; padding: 9px 10px; }
 .nav-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; background: none; border: 0; cursor: pointer; text-align: left; }
 .nav-toggle:hover { color: #fff; }
 .nav-link { transition: background var(--ease), color var(--ease); }
