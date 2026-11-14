@@ -54,11 +54,10 @@ export default function Perfis() {
   const mine = people.find((p) => p.email === email);
   const others = people.filter((p) => p.email !== email);
 
-  if (!isCloud) return <div className="card empty">Os perfis ficam disponíveis no site publicado.</div>;
-
   return (
     <>
       <PageHead title="Perfis" desc={`Só os colegas da ${team?.name || 'equipe'} veem estes perfis.`} />
+      {!isCloud && <div className="card empty">Os perfis ficam disponíveis no site publicado.</div>}
       <ErrorBox error={err} />
       {ok && <div className="tag green" style={{ padding: '8px 12px', marginBottom: 14, whiteSpace: 'normal' }}>{ok}</div>}
 
