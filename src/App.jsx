@@ -14,7 +14,7 @@ import Historico from './pages/Historico.jsx';
 import Analise from './pages/Analise.jsx';
 import Regras from './pages/Regras.jsx';
 import MediaHub from './pages/MediaHub.jsx';
-import { MiniPlayer, useMusicPlayer } from './lib/player.jsx';
+import { MiniPlayer, useMusicPlayer } from './components/MusicPlayer.jsx';
 import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
 
@@ -76,7 +76,7 @@ export default function App() {
     <div className={'shell' + (music.playing ? ' has-player' : '')}>
       <aside className={'sidebar' + (open ? ' open' : '')}>
         <div className="brand">
-          <img src="/logo.jpg" alt="" />
+          <img src="/images/logo.jpg" alt="" />
           <div>
             <strong>Rabbitech</strong>
             <small>FLL Challenge · v2</small>

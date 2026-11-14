@@ -6,7 +6,7 @@ import {
 import { useTable, insert, update, remove, isCloud } from '../lib/db.js';
 import { PageHead, ErrorBox, fmtDate } from '../components/ui.jsx';
 import { PROVIDERS, spotifyOpenUrl, isTouchDevice } from '../lib/media.js';
-import { useMusicPlayer } from '../lib/player.jsx';
+import { useMusicPlayer } from '../components/MusicPlayer.jsx';
 
 // Central de mídia usada pela Rabbitech TV (YouTube) e pela Rabbitech Music (Spotify)
 export default function MediaHub({ kind }) {

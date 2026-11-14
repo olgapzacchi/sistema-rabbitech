@@ -46,7 +46,7 @@ export default function Calculadora() {
             const res = missionResult(round, m);
             return (
               <div key={m.id} className="card mission">
-                <img src={`/missions/m${m.id}.jpg`} alt="" loading="lazy" />
+                <img src={`/images/missions/m${m.id}.jpg`} alt="" loading="lazy" />
                 <div>
                   <div className="row" style={{ marginBottom: 4 }}>
                     <span className="tag dark">M{String(m.id).padStart(2, '0')}</span>

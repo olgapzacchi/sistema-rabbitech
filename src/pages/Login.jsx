@@ -12,7 +12,7 @@ const translate = (m) => MESSAGES[m] || m;
 function Brand() {
   return (
     <div className="row">
-      <img src="/logo.jpg" alt="" width="44" height="44" style={{ borderRadius: 10 }} />
+      <img src="/images/logo.jpg" alt="" width="44" height="44" style={{ borderRadius: 10 }} />
       <div><h1 style={{ fontSize: 20 }}>Rabbitech</h1><span className="muted">Plataforma da equipe</span></div>
     </div>
   );

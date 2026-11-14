@@ -4,6 +4,7 @@ import path from 'node:path';
 
 export default class RelatorioReporter {
   constructor() { this.results = []; }
+  onBegin() { fs.rmSync(path.resolve('test-results', 'achados'), { recursive: true, force: true }); }
   onTestEnd(test, result) {
     this.results.push({
       title: test.title, project: test.parent?.project()?.name ?? '', status: result.status,

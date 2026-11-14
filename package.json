@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test",
+    "test": "playwright test -c tests",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report playwright-report"
   },
   "keywords": [],
   "author": "",

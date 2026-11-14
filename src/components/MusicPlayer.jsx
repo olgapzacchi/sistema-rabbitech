@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Music, SkipBack, SkipForward, X, ListVideo, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { spotifyEmbed, spotifyOpenUrl, isTouchDevice } from './media.js';
+import { spotifyEmbed, spotifyOpenUrl, isTouchDevice } from '../lib/media.js';
 
 const Ctx = createContext({ playing: null, setPlaying: () => {} });
 export const useMusicPlayer = () => useContext(Ctx);

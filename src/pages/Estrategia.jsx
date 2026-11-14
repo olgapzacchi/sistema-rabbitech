@@ -216,7 +216,7 @@ function MatMap({ sorties, editing }) {
   const P = ([x, y]) => [x * W, y * H];
   return (
     <div ref={ref} className={'mapbox' + (editing ? ' editing' : '')} onClick={click}>
-      <img src="/tapete.jpg" alt="Tapete BIOGLOW" draggable={false} />
+      <img src="/images/tapete.jpg" alt="Tapete BIOGLOW" draggable={false} />
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         {sorties.map((s) => {
           const manual = (s.path || []).length > 1;
