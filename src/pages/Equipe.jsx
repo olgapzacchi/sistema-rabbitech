@@ -3,15 +3,14 @@ import { Plus, Trash2, ShieldCheck, Github, Building2 } from 'lucide-react';
 import { useTable, insert, update, remove, isCloud, supabase } from '../lib/db.js';
 import { PageHead, ErrorBox, initials } from '../components/ui.jsx';
 import { useTeam } from '../lib/team.jsx';
-import { CriarEquipe, EntrarEquipe, ConviteEquipe } from '../components/Convites.jsx';
+import { ConviteEquipe } from '../components/Convites.jsx';
 
 export default function Equipe() {
   const members = useTable('members');
   const tasks = useTable('team_tasks');
   const [name, setName] = useState('');
-  const { team, reload, switchTeam } = useTeam() || {};
+  const { team } = useTeam() || {};
   const groups = [...new Set(members.rows.map((m) => m.group_name).filter(Boolean))];
-  const trocarPara = async (teamId) => { await reload(); if (teamId) switchTeam(teamId); };
 
   async function add(e) {
     e.preventDefault();
@@ -24,12 +23,6 @@ export default function Equipe() {
     <>
       <PageHead title={`Equipe ${team?.name || ''}`} desc="Alunos e grupos. Os grupos aparecem na hora de atribuir tarefas no Kanban." />
       <ErrorBox error={members.error} />
-      {isCloud && (
-        <div className="grid g2" style={{ marginBottom: 16 }}>
-          <CriarEquipe onDone={trocarPara} />
-          <EntrarEquipe onDone={trocarPara} />
-        </div>
-      )}
       <div className="split">
         <div className="card">
           <div className="table-wrap" tabIndex={0}>
