@@ -21,6 +21,7 @@ import Equipe from './pages/Equipe.jsx';
 import Codigo from './pages/Codigo.jsx';
 import Perfis from './pages/Perfis.jsx';
 import Calendario from './pages/Calendario.jsx';
+import PushToggle from './components/PushToggle.jsx';
 import { guardarConvitePendente, pegarConvitePendente } from './components/Convites.jsx';
 
 const NAV = [
@@ -151,6 +152,7 @@ function Shell({ session }) {
         <div className="sidebar-foot">
           {isCloud ? (
             <>
+              <PushToggle email={session?.user?.email?.toLowerCase()} />
               <small className="muted-dark" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{session?.user?.email}</small>
               <button className="nav-link" onClick={() => supabase.auth.signOut()}><LogOut size={18} /> <span>Sair</span></button>
             </>
