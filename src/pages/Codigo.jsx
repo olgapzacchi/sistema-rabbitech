@@ -24,6 +24,23 @@ function download(name, text) {
   URL.revokeObjectURL(url);
 }
 
+// Conferência rápida de erros comuns em Python antes de publicar (não substitui testar no robô)
+export function checkPython(code) {
+  const problems = [];
+  code.split('\n').forEach((raw, i) => {
+    const n = i + 1;
+    const line = raw.replace(/#.*$/, '').replace(/(["'])(?:\\.|(?!\1).)*\1/g, '""'); // ignora comentários e textos
+    const m = line.match(/\b(true|false|null|none)\b/);
+    if (m) problems.push(`Linha ${n}: “${m[1]}” deve ser escrito “${{ true: 'True', false: 'False', null: 'None', none: 'None' }[m[1]]}”.`);
+    if (/^\t/.test(raw) && /^ /m.test(code)) problems.push(`Linha ${n}: mistura Tab com espaços na indentação.`);
+    const balanced = (line.match(/[([{]/g) || []).length === (line.match(/[)\]}]/g) || []).length; // linha não continua na próxima
+    if (balanced && !/\\\s*$/.test(line) && /^\s*(def|if|elif|else|for|while|try|except|finally|with)\b[^:]*$/.test(line) && line.trim()) problems.push(`Linha ${n}: falta “:” no fim da linha.`);
+  });
+  const opens = (code.replace(/#.*$/gm, '').match(/\(/g) || []).length, closes = (code.replace(/#.*$/gm, '').match(/\)/g) || []).length;
+  if (opens !== closes) problems.push(`Parênteses desbalanceados: ${opens} “(” e ${closes} “)”.`);
+  return problems.slice(0, 6);
+}
+
 // Saídas do robô: saida_1.py ... saida_8.py
 const sortieNumber = (path) => Number((path.match(/^saida_(\d+)\.py$/) || [])[1] || 0);
 
@@ -74,6 +91,10 @@ export default function Codigo() {
 
   async function save() {
     if (!current || !dirty) return;
+    if (current.path.endsWith('.py')) {
+      const problems = checkPython(current.content);
+      if (problems.length && !confirm(`Encontrei possíveis erros no código:\n\n• ${problems.join('\n• ')}\n\nPublicar mesmo assim?`)) return;
+    }
     setBusy('salvar'); setErr(''); setOk('');
     try {
       const r = await call('save', { path: current.path, content: current.content, sha: current.sha, message: msg });
@@ -175,6 +196,9 @@ export default function Codigo() {
                   aria-label={`Código de ${current.path}`} rows={Math.min(32, Math.max(12, lines + 1))}
                   onChange={(e) => setCurrent({ ...current, content: e.target.value })} />
                 <small className="muted">{lines} linhas · Tab insere 4 espaços</small>
+                {current.path.endsWith('.py') && checkPython(current.content).map((pr) => (
+                  <div key={pr} className="tag amber" style={{ whiteSpace: 'normal', padding: '6px 10px' }}><AlertTriangle size={12} /> {pr}</div>
+                ))}
                 <div className="row" style={{ flexWrap: 'nowrap' }}>
                   <input type="text" aria-label="Descrição da mudança" value={msg} onChange={(e) => setMsg(e.target.value)}
                     placeholder="O que mudou? Ex.: Saída 1: ajustei o giro da M03" />
