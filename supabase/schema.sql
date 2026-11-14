@@ -211,12 +211,28 @@ create index if not exists idx_tv_playlist_items_playlist on public.tv_playlist_
 create index if not exists idx_tv_playlist_items_media    on public.tv_playlist_items (media_id);
 create index if not exists idx_media_links_pinned         on public.media_links (kind, pinned);
 
+-- ---------------------------------------------------------------------
+-- Código do robô: registro das alterações feitas pelo site (GitHub)
+-- ---------------------------------------------------------------------
+create table if not exists public.code_changes (
+  id uuid primary key default gen_random_uuid(),
+  repo text not null,
+  path text not null,
+  message text not null,
+  commit_sha text,
+  commit_url text,
+  author_email text,
+  kind text not null default 'commit' check (kind in ('commit', 'redeploy')),
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_code_changes_created_at on public.code_changes (created_at);
+
 -- Colunas comuns de auditoria (adicionadas também em bancos já existentes)
 do $$
 declare t text;
 begin
   foreach t in array array['members','team_tasks','strategies','sorties','rounds','sortie_logs',
-                           'swot_items','improvements','documents','media_links','tv_playlists','tv_playlist_items'] loop
+                           'swot_items','improvements','documents','media_links','tv_playlists','tv_playlist_items','code_changes'] loop
     execute format('alter table public.%I add column if not exists updated_at timestamptz not null default now()', t);
     execute format('alter table public.%I add column if not exists created_by uuid default auth.uid() references auth.users(id) on delete set null', t);
     execute format('drop trigger if exists trg_%s_updated_at on public.%I', t, t);
@@ -255,7 +271,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['members','team_tasks','strategies','sorties','rounds','sortie_logs',
-                           'swot_items','improvements','documents','media_links','tv_playlists','tv_playlist_items'] loop
+                           'swot_items','improvements','documents','media_links','tv_playlists','tv_playlist_items','code_changes'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('drop policy if exists "equipe_acesso_total" on public.%I', t);
     execute format('drop policy if exists "equipe_le" on public.%I', t);

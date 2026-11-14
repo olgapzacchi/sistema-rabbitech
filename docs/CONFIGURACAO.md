@@ -68,3 +68,26 @@ O player toca a música inteira no computador para quem está logado no Spotify 
 Spotify libera só 30 s dentro de sites; o botão **Abrir no Spotify** abre a música inteira no app.
 
 > As chaves ficam só no Supabase. Nunca coloque chaves secretas no código ou no chat.
+
+## 5. Código do robô (GitHub) e redeploy pelo site
+
+A tela **Código do robô** mostra e baixa os arquivos do repositório
+[`lnzindev/rabbitech-code-for-pybricks`](https://github.com/lnzindev/rabbitech-code-for-pybricks) sem configurar nada.
+Para **publicar mudanças pelo site**, o dono do repositório cria um token:
+
+1. GitHub → foto → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+2. *Repository access*: **Only select repositories** → `rabbitech-code-for-pybricks`.
+3. *Permissions → Repository permissions → Contents*: **Read and write**. Validade: até o fim da temporada.
+4. Supabase → **Edge Functions → Secrets**: `GITHUB_TOKEN` = o token.
+
+Para o botão **Redeploy do site**:
+
+1. Vercel → projeto → **Settings → Git → Deploy Hooks** → nome `plataforma`, branch `main` → **Create Hook**.
+2. Supabase → **Edge Functions → Secrets**: `VERCEL_DEPLOY_HOOK_URL` = o link gerado.
+
+Como tudo se conecta:
+
+```
+Site (Código do robô) ──salvar──▶ GitHub (commit) ──registro──▶ Supabase (code_changes, tempo real)
+GitHub do site (main) ──push──▶ Vercel publica sozinha       Botão Redeploy ──▶ Deploy Hook da Vercel
+```

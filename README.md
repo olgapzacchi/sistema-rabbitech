@@ -29,6 +29,7 @@ A versão antiga continua em [Rabbitech-calculator-first-lego-league](https://gi
 | **Histórico** | Melhor round, média, quantidade, evolução e comparação por estratégia |
 | **Análise / SWOT** | Taxa de sucesso por missão e quadro SWOT |
 | **Melhorias** | Registro de mudanças no robô (antes → depois → resultado) |
+| **Código do robô** | Programação Pybricks do GitHub: ver, baixar (.zip ou arquivo), editar e publicar pelo site, histórico e redeploy |
 | **Regras** | Caderno de regras e passo a passo da montagem do tapete (PDF/imagem/link) |
 | **Rabbitech TV** | Busca no YouTube com filtro preciso, vídeos fixados por tema, anotações e playlists da equipe |
 | **Rabbitech Music** | Busca no Spotify, favoritas, playlists dos treinos e player flutuante que continua tocando em outras telas |

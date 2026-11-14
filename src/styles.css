@@ -228,3 +228,15 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
   .has-player .content { padding-bottom: 260px; }
 }
 @media (prefers-reduced-motion: reduce) { .eq i { animation: none; height: 8px; } .glass-player, .glass-frame { transition: none; } }
+
+/* ---------- código do robô ---------- */
+.code-editor {
+  font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #0b0f19; color: #e6edf6;
+  border-radius: 10px; padding: 12px 14px; tab-size: 4; white-space: pre; overflow: auto; min-height: 280px;
+}
+.code-editor:focus { outline: 2px solid var(--blue); }
+.file-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 8px; border: 0; border-radius: 8px; cursor: pointer; text-align: left; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; color: var(--ink); }
+.file-row:hover:not(:disabled) { background: var(--bg) !important; }
+.file-row:disabled { color: var(--ink-3); cursor: default; }
+.commit-row { display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); min-width: 0; }
+.commit-row:last-child { border-bottom: 0; }

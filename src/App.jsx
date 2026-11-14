@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calculator, ClipboardList, Map, History, Grid2x2, BookOpen,
-  Tv, Music, Wrench, Users, Menu, X, LogOut,
+  Tv, Music, Wrench, Users, Menu, X, LogOut, Code2,
 } from 'lucide-react';
 import { isCloud, supabase, missingConfig } from './lib/supabase.js';
 import Login, { NewPassword, MissingConfig, AccessProblem } from './pages/Login.jsx';
@@ -17,6 +17,7 @@ import MediaHub from './pages/MediaHub.jsx';
 import { MiniPlayer, useMusicPlayer } from './components/MusicPlayer.jsx';
 import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
+import Codigo from './pages/Codigo.jsx';
 
 const NAV = [
   { section: 'Geral' },
@@ -28,6 +29,7 @@ const NAV = [
   { to: '/historico', label: 'Histórico', icon: History },
   { to: '/analise', label: 'Análise / SWOT', icon: Grid2x2 },
   { to: '/melhorias', label: 'Melhorias', icon: Wrench },
+  { to: '/codigo', label: 'Código do robô', icon: Code2 },
   { section: 'Equipe' },
   { to: '/regras', label: 'Regras', icon: BookOpen },
   { to: '/tv', label: 'Rabbitech TV', icon: Tv },
@@ -121,6 +123,7 @@ export default function App() {
           <Route path="/tv" element={<MediaHub kind="youtube" />} />
           <Route path="/music" element={<MediaHub kind="spotify" />} />
           <Route path="/equipe" element={<Equipe />} />
+          <Route path="/codigo" element={<Codigo />} />
           <Route path="*" element={<Inicio />} />
         </Routes>
       </main>

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 export const PAGES = [
   ['/', 'Início'], ['/calculadora', 'Calculadora'], ['/saidas', 'Registro de saídas'], ['/estrategia', 'Estratégia'],
-  ['/historico', 'Histórico'], ['/analise', 'Análise / SWOT'], ['/melhorias', 'Melhorias'], ['/regras', 'Regras'],
+  ['/historico', 'Histórico'], ['/analise', 'Análise / SWOT'], ['/melhorias', 'Melhorias'], ['/codigo', 'Código do robô'], ['/regras', 'Regras'],
   ['/tv', 'Rabbitech TV'], ['/music', 'Rabbitech Music'], ['/equipe', 'Equipe'],
 ];
 

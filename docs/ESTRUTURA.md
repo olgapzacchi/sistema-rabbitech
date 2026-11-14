@@ -14,7 +14,7 @@ sistema-rabbitech/
 │   └── styles.css         visual (branco, preto e azul)
 ├── supabase/
 │   ├── schema.sql         banco completo (tabelas, segurança, dados iniciais)
-│   └── functions/         buscas no YouTube e no Spotify (rodam no servidor)
+│   └── functions/         YouTube, Spotify e ponte com o GitHub do robô (rodam no servidor)
 ├── tests/                 robô de testes (Playwright) e sua configuração
 ├── index.html  package.json  vite.config.js  vercel.json
 │                          ficam na raiz porque o Vite e a Vercel procuram por eles ali
