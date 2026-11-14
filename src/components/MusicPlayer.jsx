@@ -114,46 +114,60 @@ export function MiniPlayer() {
 
   return (
     <div className={'glass-player' + (open ? ' open' : '')}>
-      <div className="glass-row">
-        <button className="glass-cover" onClick={() => setOpen((o) => !o)} title={open ? 'Minimizar' : 'Abrir player'}>
-          {cover ? <img src={cover} alt="" /> : <Music size={16} />}
-        </button>
-        <button className="glass-text" onClick={() => setOpen((o) => !o)} title={open ? 'Minimizar' : 'Abrir player'}>
-          <span className="ellipsis glass-title">{track.title}</span>
-          {open && (
+      {open ? (
+        /* ---- stacked (expandido) ---- */
+        <>
+          <div className="glass-stack-cover">
+            {cover ? <img src={cover} alt="" /> : <Music size={40} />}
+            {!paused && <span className="eq glass-stack-eq" aria-hidden="true"><i /><i /><i /></span>}
+          </div>
+          <div className="glass-stack-info">
+            <span className="ellipsis glass-title">{track.title}</span>
             <span className="ellipsis glass-sub">
               {playing.playlistName ? `${playing.playlistName} · ${idx + 1}/${queue.length}` : track.channel}
             </span>
-          )}
-        </button>
-        {!paused && !open && <span className="eq" aria-hidden="true" style={{ display: 'inline-flex' }}><i /><i /><i /></span>}
-        {open && queue.length > 1 && <button className="glass-btn" disabled={idx <= 0} title="Anterior" onClick={() => go(-1)}><SkipBack size={14} /></button>}
-        <button className="glass-btn" title={paused ? 'Tocar' : 'Pausar'} onClick={toggle}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
-        {open && queue.length > 1 && <button className="glass-btn" disabled={idx < 0 || idx >= queue.length - 1} title="Próxima" onClick={() => go(1)}><SkipForward size={14} /></button>}
-        {open && <Link to="/music" className="glass-btn" title="Ir para a Rabbitech Music" aria-label="Ir para a Rabbitech Music"><ListVideo size={14} /></Link>}
-        <button className="glass-btn" title={open ? 'Minimizar' : 'Abrir'} onClick={() => setOpen((o) => !o)}>
-          {open ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
-        </button>
-        <button className="glass-btn" title="Fechar player" onClick={close}><X size={14} /></button>
-      </div>
-
-      {open && time.dur > 0 && (
-        <div className="glass-team">
-          <div className="row" style={{ flexWrap: 'nowrap', gap: 8 }}>
-            <small>{mmss(time.cur)}</small>
-            <input type="range" aria-label="Posição da música" min={0} max={Math.floor(time.dur)} value={Math.floor(time.cur)}
-              onChange={(e) => { ytRef.current?.seekTo?.(Number(e.target.value), true); setTime((t) => ({ ...t, cur: Number(e.target.value) })); }}
-              style={{ flex: 1 }} />
-            <small>{mmss(time.dur)}</small>
           </div>
+          {time.dur > 0 && (
+            <div className="glass-stack-seek">
+              <small>{mmss(time.cur)}</small>
+              <input type="range" aria-label="Posição da música" min={0} max={Math.floor(time.dur)} value={Math.floor(time.cur)}
+                onChange={(e) => { ytRef.current?.seekTo?.(Number(e.target.value), true); setTime((t) => ({ ...t, cur: Number(e.target.value) })); }}
+                style={{ flex: 1 }} />
+              <small>{mmss(time.dur)}</small>
+            </div>
+          )}
+          <div className="glass-stack-controls">
+            <button className="glass-btn" disabled={idx <= 0} title="Anterior" onClick={() => go(-1)}><SkipBack size={15} /></button>
+            <button className="glass-btn glass-btn-main" title={paused ? 'Tocar' : 'Pausar'} onClick={toggle}>
+              {paused ? <Play size={18} /> : <Pause size={18} />}
+            </button>
+            <button className="glass-btn" disabled={idx < 0 || idx >= queue.length - 1} title="Próxima" onClick={() => go(1)}><SkipForward size={15} /></button>
+            <Link to="/music" className="glass-btn" title="Ir para a Rabbitech Music" aria-label="Ir para a Rabbitech Music"><ListVideo size={14} /></Link>
+            <button className="glass-btn" title="Minimizar" onClick={() => setOpen(false)}><ChevronDown size={15} /></button>
+            <button className="glass-btn" title="Fechar player" onClick={close}><X size={14} /></button>
+          </div>
+          {error && (
+            <div className="glass-hint" style={{ background: 'rgba(217,45,32,.12)', color: '#912018' }}>
+              {error} <a href={track.url} target="_blank" rel="noreferrer">Abrir no YouTube <ExternalLink size={11} /></a>
+            </div>
+          )}
+        </>
+      ) : (
+        /* ---- pílula (minimizado) ---- */
+        <div className="glass-row">
+          <button className="glass-cover" onClick={() => setOpen(true)} title="Abrir player">
+            {cover ? <img src={cover} alt="" /> : <Music size={16} />}
+          </button>
+          <button className="glass-text" onClick={() => setOpen(true)} title="Abrir player">
+            <span className="ellipsis glass-title">{track.title}</span>
+          </button>
+          {!paused && <span className="eq" aria-hidden="true" style={{ display: 'inline-flex' }}><i /><i /><i /></span>}
+          <button className="glass-btn" title={paused ? 'Tocar' : 'Pausar'} onClick={toggle}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
+          <button className="glass-btn" title="Abrir" onClick={() => setOpen(true)}><ChevronUp size={15} /></button>
+          <button className="glass-btn" title="Fechar player" onClick={close}><X size={14} /></button>
         </div>
       )}
-      {open && error && (
-        <div className="glass-hint" style={{ background: 'rgba(217,45,32,.12)', color: '#912018' }}>
-          {error} <a href={track.url} target="_blank" rel="noreferrer">Abrir no YouTube <ExternalLink size={11} /></a>
-        </div>
-      )}
-      {/* o vídeo fica sempre montado (mesmo minimizado) para a música não parar */}
+      {/* vídeo sempre montado (mesmo minimizado) para a música não parar */}
       <div className="glass-video" ref={hostRef} />
     </div>
   );
