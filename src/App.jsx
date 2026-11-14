@@ -14,7 +14,8 @@ import Historico from './pages/Historico.jsx';
 import Analise from './pages/Analise.jsx';
 import Regras from './pages/Regras.jsx';
 import MediaHub from './pages/MediaHub.jsx';
-import { MiniPlayer, useMusicPlayer } from './components/MusicPlayer.jsx';
+import { MiniPlayer, useMusicPlayer, MusicPlayerProvider } from './components/MusicPlayer.jsx';
+import { TeamProvider, useTeam } from './lib/team.jsx';
 import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
 import Codigo from './pages/Codigo.jsx';
@@ -38,13 +39,9 @@ const NAV = [
 ];
 
 export default function App() {
-  const [open, setOpen] = useState(false);
   const [session, setSession] = useState(undefined);
   const [recovering, setRecovering] = useState(false);
-  const [access, setAccess] = useState('checking');
-  const music = useMusicPlayer(); // checking | ok | denied | noschema
-  const loc = useLocation();
-  useEffect(() => setOpen(false), [loc.pathname]);
+  const [access, setAccess] = useState('checking'); // checking | ok | denied | noschema
 
   useEffect(() => {
     if (!isCloud) { setSession(null); return; }
@@ -56,7 +53,7 @@ export default function App() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  // Confere se a conta logada está liberada (public.is_team_member, ver supabase/schema.sql)
+  // Confere se a conta logada pertence a alguma equipe (public.is_team_member)
   const userId = session?.user?.id;
   useEffect(() => {
     if (!isCloud || !userId) return;
@@ -75,16 +72,42 @@ export default function App() {
   if (isCloud && access !== 'ok') return <AccessProblem kind={access} email={session.user?.email} />;
 
   return (
+    <TeamProvider session={session} denied={<AccessProblem kind="denied" email={session?.user?.email} />}>
+      {(t) => (
+        // trocar de equipe remonta tudo: dados, player e conta do Spotify passam a ser da nova equipe
+        <MusicPlayerProvider key={t.teamId}>
+          <Shell session={session} />
+        </MusicPlayerProvider>
+      )}
+    </TeamProvider>
+  );
+}
+
+function Shell({ session }) {
+  const [open, setOpen] = useState(false);
+  const music = useMusicPlayer();
+  const { team, teams, switchTeam } = useTeam();
+  const loc = useLocation();
+  useEffect(() => setOpen(false), [loc.pathname]);
+
+  return (
     <div className={'shell' + (music.playing ? ' has-player' : '')}>
       <aside className={'sidebar' + (open ? ' open' : '')}>
         <div className="brand">
           <img src="/images/logo.jpg" alt="" />
-          <div>
-            <strong>Rabbitech</strong>
+          <div style={{ minWidth: 0 }}>
+            <strong>{team.name}</strong>
             <small>FLL Challenge · v2</small>
           </div>
           <button className="icon-btn only-mobile" onClick={() => setOpen(false)} aria-label="Fechar menu"><X size={18} /></button>
         </div>
+        {teams.length > 1 && (
+          <div style={{ padding: '10px 16px 0' }}>
+            <select aria-label="Trocar de equipe" className="team-select" value={team.id} onChange={(e) => switchTeam(e.target.value)}>
+              {teams.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          </div>
+        )}
         <nav>
           {NAV.map((n, i) =>
             n.section ? <div key={i} className="nav-section">{n.section}</div> : (
@@ -109,7 +132,7 @@ export default function App() {
       <main className="content">
         <div className="mobile-bar only-mobile">
           <button className="icon-btn" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu size={20} /></button>
-          <strong>Rabbitech</strong>
+          <strong>{team.name}</strong>
         </div>
         <Routes>
           <Route path="/" element={<Inicio />} />

@@ -115,12 +115,10 @@ export function AccessProblem({ kind, email }) {
           <>
             <h2 style={{ margin: 0, fontSize: 16 }}>Conta ainda não liberada</h2>
             <p style={{ margin: 0 }}>
-              Você entrou como <b>{email}</b>, mas este e-mail não está na lista de acesso da equipe,
-              então nada pode ser lido nem salvo. Peça ao responsável para rodar no Supabase (SQL Editor):
+              Você entrou como <b>{email}</b>, mas este e-mail ainda não faz parte de nenhuma equipe,
+              então nada pode ser lido nem salvo. Peça ao administrador da sua equipe para adicionar
+              o seu e-mail em <b>Equipe → Acesso à plataforma</b>.
             </p>
-            <pre style={{ background: 'var(--bg)', padding: 10, borderRadius: 8, whiteSpace: 'pre-wrap', margin: 0 }}>
-{`insert into public.allowed_emails (email)\nvalues ('${(email || '').toLowerCase()}');`}
-            </pre>
           </>
         ) : (
           <>

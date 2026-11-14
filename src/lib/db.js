@@ -9,7 +9,16 @@ import { seedData } from '../data/seed.js';
 export { supabase, isCloud };
 
 // Campos controlados pelo banco: nunca são enviados pelo app
-const SERVER_FIELDS = ['id', 'created_at', 'updated_at', 'created_by'];
+const SERVER_FIELDS = ['id', 'created_at', 'updated_at', 'created_by', 'team_id'];
+
+// ---------- equipe atual ----------
+// Todas as tabelas de dados são separadas por equipe (coluna team_id + RLS no banco).
+const TEAM_TABLES = new Set(['members', 'team_tasks', 'strategies', 'sorties', 'rounds', 'sortie_logs', 'swot_items',
+  'improvements', 'documents', 'media_links', 'tv_playlists', 'tv_playlist_items', 'code_changes']);
+let currentTeam = null;
+export function setCurrentTeam(id) { currentTeam = id; }
+export const getCurrentTeam = () => currentTeam;
+const scoped = (table) => isCloud && TEAM_TABLES.has(table);
 const clean = (row) => Object.fromEntries(Object.entries(row).filter(([k]) => !SERVER_FIELDS.includes(k)));
 
 // ---------- avisos entre componentes da mesma aba ----------
@@ -47,7 +56,12 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) 
 // ---------- API genérica ----------
 export async function list(table) {
   if (!isCloud) return readLocal(table);
-  const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: true });
+  let q = supabase.from(table).select('*').order('created_at', { ascending: true });
+  if (scoped(table)) {
+    if (!currentTeam) return [];
+    q = q.eq('team_id', currentTeam);
+  }
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
@@ -59,7 +73,8 @@ export async function insert(table, row) {
     notify(table);
     return full;
   }
-  const { data, error } = await supabase.from(table).insert(clean(row)).select().single();
+  const payload = scoped(table) ? { ...clean(row), team_id: currentTeam } : clean(row);
+  const { data, error } = await supabase.from(table).insert(payload).select().single();
   if (error) fail('salvar', table, error);
   notify(table);
   return data;
@@ -88,7 +103,7 @@ export async function remove(table, id) {
 // Upload para o bucket "documentos" (tela Regras)
 export async function uploadFile(file) {
   if (!isCloud) return URL.createObjectURL(file); // local: só vale nesta aba
-  const path = `${new Date().toISOString().slice(0, 10)}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
+  const path = `${currentTeam || 'geral'}/${new Date().toISOString().slice(0, 10)}/${Date.now()}-${file.name.replace(/[^\w.-]+/g, '_')}`;
   const { error } = await supabase.storage.from('documentos').upload(path, file, { contentType: file.type });
   if (error) fail('enviar o arquivo', 'documentos', error);
   return supabase.storage.from('documentos').getPublicUrl(path).data.publicUrl;
@@ -115,7 +130,7 @@ export function useTable(table) {
     if (isCloud) {
       channel = supabase
         .channel(`rt-${table}-${++channelSeq}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table }, load)
+        .on('postgres_changes', { event: '*', schema: 'public', table, ...(scoped(table) && currentTeam ? { filter: `team_id=eq.${currentTeam}` } : {}) }, load)
         .subscribe();
     }
     return () => { off(); if (channel) supabase.removeChannel(channel); };

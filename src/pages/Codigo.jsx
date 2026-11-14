@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Download, Github, Copy, Check, Save, RefreshCw, FileCode2, ExternalLink, Rocket, History, AlertTriangle, Loader2,
 } from 'lucide-react';
-import { isCloud, supabase, useTable } from '../lib/db.js';
+import { isCloud, supabase, useTable, getCurrentTeam } from '../lib/db.js';
 import { PageHead, fmtDate } from '../components/ui.jsx';
 
-const DEFAULT_REPO = 'lnzindev/rabbitech-code-for-pybricks';
+const DEFAULT_REPO = '';
 
 async function call(action, extra = {}) {
-  const { data, error } = await supabase.functions.invoke('robot-code', { body: { action, ...extra } });
+  const { data, error } = await supabase.functions.invoke('robot-code', { body: { action, team_id: getCurrentTeam(), ...extra } });
   if (error) {
     let msg = error.message;
     try { msg = (await error.context.json()).error || msg; } catch { /* sem corpo */ }
@@ -148,6 +148,11 @@ export default function Codigo() {
     <>
       <PageHead title="Código do robô" desc="Programação Pybricks da equipe, ligada ao GitHub: veja, baixe, edite e publique pelo site." />
 
+      {!repo ? (status && (
+        <div className="card empty" style={{ marginBottom: 16 }}>
+          Esta equipe ainda não tem repositório do código do robô. O administrador configura em <b>Equipe → Configurações da equipe</b>.
+        </div>
+      )) : (
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div className="row">
@@ -168,17 +173,18 @@ export default function Codigo() {
         </div>
         <code id="clone-cmd" className="muted" style={{ display: 'block', marginTop: 10, fontSize: 12 }}>{cloneCmd}</code>
       </div>
+      )}
 
       {!isCloud && <div className="card empty">Esta tela precisa do Supabase (fica disponível no site publicado).</div>}
       {status && !status.canWrite && (
         <div className="error" style={{ background: 'var(--amber-2)', color: '#93370d' }}>
-          <AlertTriangle size={14} style={{ verticalAlign: -2 }} /> Dá para ver e baixar, mas <b>salvar no GitHub</b> ainda não está ligado: falta o <code>GITHUB_TOKEN</code> no Supabase (veja <i>docs/CONFIGURACAO.md</i>).
+          <AlertTriangle size={14} style={{ verticalAlign: -2 }} /> Dá para ver e baixar, mas <b>salvar no GitHub</b> ainda não está ligado para esta equipe: o administrador cadastra o token do GitHub em <b>Equipe → Configurações da equipe</b>.
         </div>
       )}
       {err && <div className="error">{err}</div>}
       {ok && <div className="tag green" style={{ padding: '8px 12px', marginBottom: 14, whiteSpace: 'normal' }}>{ok}</div>}
 
-      {isCloud && (
+      {isCloud && repo && (
         <div className="split">
           <div className="card stack">
             {!current ? (

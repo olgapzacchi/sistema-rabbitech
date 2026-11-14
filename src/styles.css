@@ -240,3 +240,6 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 .file-row:disabled { color: var(--ink-3); cursor: default; }
 .commit-row { display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); min-width: 0; }
 .commit-row:last-child { border-bottom: 0; }
+.glass-team { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
+.glass-team input[type=range] { accent-color: #1db954; }
+.team-select { background: #161c2a; color: #fff; border-color: #2a3346; font-weight: 600; }

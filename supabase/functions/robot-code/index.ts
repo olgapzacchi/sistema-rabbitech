@@ -1,10 +1,12 @@
-// Ponte entre o site e o repositório do código do robô (Pybricks) no GitHub.
+// Ponte entre o site e o repositório do código do robô (Pybricks) no GitHub — POR EQUIPE.
+// Cada equipe define o próprio repositório (teams.github_repo) e, se quiser salvar pelo site,
+// o próprio token (guardado em team_integrations, que o site não lê).
 // Secrets no Supabase (Edge Functions > Secrets):
-//   GITHUB_TOKEN            token com permissão "Contents: Read and write" no repositório (para salvar)
-//   GITHUB_REPO             opcional, padrão "lnzindev/rabbitech-code-for-pybricks"
+//   GITHUB_TOKEN            token da equipe dona do repositório padrão (GITHUB_REPO)
+//   GITHUB_REPO             padrão "lnzindev/rabbitech-code-for-pybricks"
 //   GITHUB_BRANCH           opcional, padrão "main"
 //   VERCEL_DEPLOY_HOOK_URL  opcional, para o botão de redeploy do site
-// Só membros da equipe logados podem usar (public.is_team_member()).
+// Só membros DA EQUIPE pedida podem usar (public.is_member_of).
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -16,9 +18,19 @@ const cors = {
 };
 const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: cors });
 
-const REPO = Deno.env.get("GITHUB_REPO") || "lnzindev/rabbitech-code-for-pybricks";
+const DEFAULT_REPO = Deno.env.get("GITHUB_REPO") || "lnzindev/rabbitech-code-for-pybricks";
 const BRANCH = Deno.env.get("GITHUB_BRANCH") || "main";
-const TOKEN = Deno.env.get("GITHUB_TOKEN") || "";
+const DEFAULT_TOKEN = Deno.env.get("GITHUB_TOKEN") || "";
+const REPO_RE = /^[\w.-]+\/[\w.-]+$/;
+let REPO = DEFAULT_REPO;
+let TOKEN = "";
+
+function keyFrom(name: string, jsonName: string) {
+  const direct = Deno.env.get(name);
+  if (direct) return direct;
+  try { return JSON.parse(Deno.env.get(jsonName) ?? "{}").default ?? ""; } catch { return ""; }
+}
+const service = () => createClient(Deno.env.get("SUPABASE_URL")!, keyFrom("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEYS"), { auth: { persistSession: false } });
 const HOOK = Deno.env.get("VERCEL_DEPLOY_HOOK_URL") || "";
 const EDITABLE = /\.(py|md|txt|json|html|css|js)$/i;
 
@@ -62,13 +74,40 @@ Deno.serve(async (req: Request) => {
   const { data: ok, error: accessError } = await sb.rpc("is_team_member");
   if (accessError || !ok) return reply({ error: "Sua conta não está liberada para a equipe." }, 403);
 
-  let body: { action?: string; path?: string; content?: string; sha?: string; message?: string } = {};
+  let body: { action?: string; path?: string; content?: string; sha?: string; message?: string; team_id?: string; repo?: string; token?: string } = {};
   try { body = await req.json(); } catch { /* corpo vazio */ }
+
+  // Equipe: só quem é membro dela usa o repositório e o token dela
+  const teamId = String(body.team_id ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(teamId)) return reply({ error: "Equipe inválida." }, 400);
+  const { data: member } = await sb.rpc("is_member_of", { t: teamId });
+  if (!member) return reply({ error: "Você não faz parte dessa equipe." }, 403);
+  const { data: team } = await sb.from("teams").select("name, github_repo").eq("id", teamId).maybeSingle();
+  REPO = team?.github_repo || "";
+  const { data: integ } = await service().from("team_integrations").select("github_token").eq("team_id", teamId).maybeSingle();
+  TOKEN = integ?.github_token || (REPO && REPO === DEFAULT_REPO ? DEFAULT_TOKEN : "");
+
+  if (body.action === "set_github") {
+    const { data: admin } = await sb.rpc("is_admin_of", { t: teamId });
+    if (!admin) return reply({ error: "Só o administrador da equipe muda o repositório." }, 403);
+    const repo = String(body.repo ?? "").trim().replace(/^https:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/$/, "");
+    if (repo && !REPO_RE.test(repo)) return reply({ error: "Repositório inválido. Use dono/nome, ex.: lnzindev/rabbitech-code-for-pybricks" }, 400);
+    const { error: upErr } = await sb.from("teams").update({ github_repo: repo }).eq("id", teamId);
+    if (upErr) return reply({ error: upErr.message }, 400);
+    if (typeof body.token === "string") {
+      await service().from("team_integrations").upsert({ team_id: teamId, github_token: body.token.trim() || null, updated_at: new Date().toISOString() });
+    }
+    return reply({ ok: true, repo });
+  }
+  if (!REPO && body.action !== "status") return reply({ error: "Esta equipe ainda não tem repositório do robô. O administrador configura na tela Equipe." }, 404);
 
   try {
     switch (body.action) {
       case "status":
-        return reply({ repo: REPO, branch: BRANCH, canWrite: !!TOKEN, canRedeploy: !!HOOK });
+      {
+        const { data: platformAdmin } = await sb.rpc("is_platform_admin");
+        return reply({ repo: REPO, branch: BRANCH, canWrite: !!TOKEN, canRedeploy: !!HOOK && !!platformAdmin, team: team?.name ?? "" });
+      }
 
       case "tree": {
         const res = await gh(`/git/trees/${BRANCH}?recursive=1`);
@@ -102,7 +141,7 @@ Deno.serve(async (req: Request) => {
       }
 
       case "save": {
-        if (!TOKEN) return reply({ error: "Salvar no GitHub ainda não foi configurado: falta o GITHUB_TOKEN no Supabase." }, 503);
+        if (!TOKEN) return reply({ error: "Salvar pelo site ainda não está ligado para esta equipe: o administrador cadastra o token do GitHub na tela Equipe." }, 503);
         const path = safePath(body.path);
         if (!path || !EDITABLE.test(path)) return reply({ error: "Só dá para salvar arquivos de texto (.py, .md, ...)." }, 400);
         const content = String(body.content ?? "");
@@ -118,17 +157,19 @@ Deno.serve(async (req: Request) => {
         if (!res.ok) return reply({ error: await ghError(res) }, res.status === 409 ? 409 : 502);
         const data = await res.json();
         await sb.from("code_changes").insert({
-          repo: REPO, path, message: message.split("\n")[0], commit_sha: data.commit?.sha, commit_url: data.commit?.html_url, author_email: email, kind: "commit",
+          team_id: teamId, repo: REPO, path, message: message.split("\n")[0], commit_sha: data.commit?.sha, commit_url: data.commit?.html_url, author_email: email, kind: "commit",
         });
         return reply({ sha: data.content?.sha, commit: { sha: data.commit?.sha, url: data.commit?.html_url } });
       }
 
       case "redeploy": {
         if (!HOOK) return reply({ error: "Redeploy ainda não foi configurado: falta o VERCEL_DEPLOY_HOOK_URL no Supabase." }, 503);
+        const { data: platformAdmin } = await sb.rpc("is_platform_admin");
+        if (!platformAdmin) return reply({ error: "O site é de todas as equipes: só o administrador da plataforma faz redeploy." }, 403);
         const res = await fetch(HOOK, { method: "POST" });
         if (!res.ok) return reply({ error: `A Vercel recusou o pedido (${res.status}).` }, 502);
         const { data: user } = await sb.auth.getUser();
-        await sb.from("code_changes").insert({ repo: "vercel", path: "site", message: "Redeploy do site pedido pela plataforma", author_email: user?.user?.email ?? "equipe", kind: "redeploy" });
+        await sb.from("code_changes").insert({ team_id: teamId, repo: "vercel", path: "site", message: "Redeploy do site pedido pela plataforma", author_email: user?.user?.email ?? "equipe", kind: "redeploy" });
         return reply({ ok: true });
       }
 
