@@ -25,6 +25,15 @@ export function TeamProvider({ session, children, fallback, denied }) {
     setState({ loading: false, teams, platform: !!platform, error: error?.message });
   }, [email]);
   useEffect(() => { reload(); }, [reload]);
+  // entrar, sair ou ser removido de uma equipe (ou renomear uma) aparece na hora, sem recarregar
+  useEffect(() => {
+    if (!isCloud || !email) return undefined;
+    const ch = supabase.channel(`equipes-${email}-${Math.random()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `email=eq.${email}` }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, reload)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [email, reload]);
 
   const team = state.teams.find((t) => t.id === teamId) || state.teams[0] || null;
   setCurrentTeam(team?.id || null); // o banco passa a ler/gravar só nesta equipe
