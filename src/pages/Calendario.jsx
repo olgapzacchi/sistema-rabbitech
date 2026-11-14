@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2, Trophy, ClipboardCheck } from 
 import { useTable, insert, remove } from '../lib/db.js';
 import { PageHead, ErrorBox } from '../components/ui.jsx';
 
-const KINDS = { torneio: 'Torneio', reuniao: 'Reunião', treino: 'Treino', outro: 'Outro' };
+const KINDS = { torneio: 'Torneio', reuniao: 'Reunião', treino: 'Treino', data: 'Data comemorativa', outro: 'Outro' };
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 

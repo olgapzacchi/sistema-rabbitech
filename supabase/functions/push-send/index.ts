@@ -2,7 +2,8 @@
 // Ações (POST JSON):
 //   public_key  qualquer pessoa: devolve a chave pública VAPID (gerada aqui na primeira vez)
 //   test        pessoa logada: manda um aviso de teste para os próprios aparelhos
-//   digest      só o agendador do banco (cabeçalho x-cron-secret): avisa prazos e eventos chegando
+//   notify      só o banco (cabeçalho x-cron-secret): avisa a equipe quando algo acontece (gatilhos)
+//   digest      só o agendador do banco (cabeçalho x-cron-secret): resumo diário, só para quem escolheu "resumo"
 // As chaves ficam em public.push_config, tabela que o site não lê. Nenhum segredo é digitado.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -19,6 +20,7 @@ const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body)
 const SUBJECT = "https://sistema-rabbitech.vercel.app";
 const PRAZO_DIAS = 3;
 const TORNEIO_DIAS = 14;
+const CATEGORIAS = ["agenda", "tarefas", "documentos", "robo", "rounds", "equipe"];
 
 function keyFrom(name: string, jsonName: string) {
   const direct = Deno.env.get(name);
@@ -67,7 +69,7 @@ async function digest() {
   const diff = (s: string) => Math.round((dia(s) - dia(hoje)) / 86400000);
   const mais = (n: number) => new Date(dia(hoje) + n * 86400000).toISOString().slice(0, 10);
 
-  const { data: subs } = await db.from("push_subscriptions").select("email, endpoint, p256dh, auth");
+  const { data: subs } = await db.from("push_subscriptions").select("email, endpoint, p256dh, auth").contains("categorias", ["resumo"]);
   if (!subs?.length) return { pessoas: 0, enviados: 0 };
   const emails = [...new Set(subs.map((s) => s.email))];
 
@@ -107,11 +109,36 @@ async function digest() {
   return { pessoas, enviados };
 }
 
+type Aviso = { team_id?: string; categoria?: string; title?: string; body?: string; url?: string; actor?: string };
+async function notify(a: Aviso) {
+  const db = service();
+  const cat = String(a.categoria ?? "");
+  const teamId = String(a.team_id ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(teamId) || !CATEGORIAS.includes(cat) || !a.title) return { pessoas: 0, enviados: 0 };
+  const ator = String(a.actor ?? "").toLowerCase();
+  const [{ data: membros }, { data: team }] = await Promise.all([
+    db.from("team_members").select("email").eq("team_id", teamId),
+    db.from("teams").select("name").eq("id", teamId).maybeSingle(),
+  ]);
+  const emails = (membros ?? []).map((m) => m.email).filter((e) => e !== ator);
+  if (!emails.length) return { pessoas: 0, enviados: 0 };
+  const { data: subs } = await db.from("push_subscriptions").select("email, endpoint, p256dh, auth").in("email", emails).contains("categorias", [cat]);
+  const url = typeof a.url === "string" && a.url.startsWith("/") ? a.url : "/";
+  const payload: Payload = {
+    title: `${String(a.title).slice(0, 60)}${team?.name ? ` · ${team.name}` : ""}`,
+    body: String(a.body ?? "").slice(0, 200),
+    url, tag: `rabbitech-${cat}-${Date.now()}`,
+  };
+  let enviados = 0;
+  for (const s of subs ?? []) if ((await send(s, payload)) === "ok") enviados++;
+  return { pessoas: new Set((subs ?? []).map((s) => s.email)).size, enviados };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return reply({ error: "Método não permitido." }, 405);
 
-  let body: { action?: string } = {};
+  let body: { action?: string } & Aviso = {};
   try { body = await req.json(); } catch { /* corpo vazio */ }
 
   let cfg: Config;
@@ -119,6 +146,11 @@ Deno.serve(async (req: Request) => {
   webpush.setVapidDetails(SUBJECT, cfg.vapid_public, cfg.vapid_private);
 
   if (body.action === "public_key") return reply({ public_key: cfg.vapid_public });
+
+  if (body.action === "notify") {
+    if (req.headers.get("x-cron-secret") !== cfg.cron_secret) return reply({ error: "Não autorizado." }, 401);
+    return reply({ ok: true, ...(await notify(body as Aviso)) });
+  }
 
   if (body.action === "digest") {
     if (req.headers.get("x-cron-secret") !== cfg.cron_secret) return reply({ error: "Não autorizado." }, 401);

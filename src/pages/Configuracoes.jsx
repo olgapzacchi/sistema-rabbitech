@@ -3,7 +3,7 @@ import { Bell, BellOff, KeyRound, Loader2 } from 'lucide-react';
 import { isCloud, supabase } from '../lib/db.js';
 import { PageHead } from '../components/ui.jsx';
 import { useTeam } from '../lib/team.jsx';
-import { estadoPush, ativarPush, desativarPush, testarPush } from '../lib/push.js';
+import { estadoPush, ativarPush, desativarPush, testarPush, CATEGORIAS, lerCategorias, salvarCategorias } from '../lib/push.js';
 import { AccessAdmin } from './Equipe.jsx';
 
 const AVISO = {
@@ -36,7 +36,15 @@ function Notificacoes({ email }) {
   const [estado, setEstado] = useState('...');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [cats, setCats] = useState([]);
   useEffect(() => { estadoPush().then(setEstado).catch(() => setEstado('indisponivel')); }, []);
+  useEffect(() => { if (estado === 'ligado') lerCategorias().then(setCats).catch(() => {}); }, [estado]);
+
+  async function alternar(chave) {
+    const novas = cats.includes(chave) ? cats.filter((c) => c !== chave) : [...cats, chave];
+    setCats(novas); setMsg('');
+    try { await salvarCategorias(novas); } catch (e) { setCats(cats); setMsg(e.message); }
+  }
 
   async function agir(fn, ok) {
     setBusy(true); setMsg('');
@@ -49,7 +57,7 @@ function Notificacoes({ email }) {
     <div className="card stack">
       <h2 style={{ margin: 0 }}><Bell size={15} style={{ verticalAlign: -2 }} /> Notificações</h2>
       <div className="muted" style={{ fontSize: 13 }}>
-        Todo dia às 8h você recebe um aviso com os prazos e eventos que estão chegando, mesmo com o navegador fechado. Vale só para este aparelho.
+        Você recebe um aviso quando algo novo acontece na equipe, mesmo com o navegador fechado. Escolha o que quer receber. Vale só para este aparelho, e você não recebe aviso do que você mesmo fez.
       </div>
       {estado === '...' && <Loader2 size={16} className="spin" />}
       {AVISO[estado] && <div className="tag amber" style={{ whiteSpace: 'normal', padding: '8px 12px' }}><BellOff size={13} /> {AVISO[estado]}</div>}
@@ -62,6 +70,14 @@ function Notificacoes({ email }) {
       {estado === 'ligado' && (
         <>
           <span className="tag green" style={{ alignSelf: 'flex-start' }}><Bell size={12} /> Avisos ativos neste aparelho</span>
+          <div className="stack" style={{ gap: 6 }} role="group" aria-label="O que avisar">
+            {CATEGORIAS.map(([chave, nome, desc]) => (
+              <label key={chave} className="cond" style={{ padding: 0, alignItems: 'center' }}>
+                <input type="checkbox" checked={cats.includes(chave)} onChange={() => alternar(chave)} />
+                <span><b>{nome}</b> <span className="muted">· {desc}</span></span>
+              </label>
+            ))}
+          </div>
           <div className="row">
             <button className="btn" disabled={busy} onClick={() => agir(testarPush, 'Teste enviado. Deve chegar em instantes.')}>Testar</button>
             <button className="btn" disabled={busy} onClick={() => agir(desativarPush, 'Avisos desativados neste aparelho.')}>Desligar</button>

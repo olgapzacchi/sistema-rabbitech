@@ -51,3 +51,32 @@ export async function desativarPush() {
 }
 
 export const testarPush = () => chamar({ action: 'test' });
+
+export const CATEGORIAS = [
+  ['agenda', 'Agenda', 'Eventos, torneios e datas comemorativas novos'],
+  ['tarefas', 'Tarefas', 'Tarefa nova e tarefa concluída'],
+  ['documentos', 'Regras', 'Documento novo anexado'],
+  ['robo', 'Código do robô', 'Mudança publicada no GitHub pelo site'],
+  ['rounds', 'Rounds', 'Round novo registrado'],
+  ['equipe', 'Equipe', 'Pessoa nova entrou na equipe'],
+  ['resumo', 'Resumo diário às 8h', 'Prazos e eventos que estão chegando'],
+];
+
+async function meuEndpoint() {
+  const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+  return (await reg?.pushManager.getSubscription())?.endpoint;
+}
+
+export async function lerCategorias() {
+  const endpoint = await meuEndpoint();
+  if (!endpoint) return [];
+  const { data } = await supabase.from('push_subscriptions').select('categorias').eq('endpoint', endpoint).maybeSingle();
+  return data?.categorias || [];
+}
+
+export async function salvarCategorias(categorias) {
+  const endpoint = await meuEndpoint();
+  if (!endpoint) throw new Error('Este aparelho não está com os avisos ativos.');
+  const { error } = await supabase.from('push_subscriptions').update({ categorias }).eq('endpoint', endpoint);
+  if (error) throw new Error(error.message);
+}
