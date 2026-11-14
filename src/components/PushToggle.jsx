@@ -25,7 +25,7 @@ export default function PushToggle({ email }) {
     <div style={{ marginBottom: 8 }}>
       {estado === 'ligado' ? (
         <div className="row" style={{ padding: '0 10px', gap: 6 }}>
-          <span className="muted-dark" style={{ padding: 0, flex: 1 }}><Bell size={12} style={{ verticalAlign: -2 }} /> Avisos ativos</span>
+          <span className="muted-dark" style={{ padding: 0, flex: '1 1 100%' }}><Bell size={12} style={{ verticalAlign: -2 }} /> Avisos ativos</span>
           <button className="btn sm" disabled={busy} onClick={() => agir(testarPush, 'Teste enviado. Deve chegar em instantes.')}>Testar</button>
           <button className="btn sm" disabled={busy} onClick={() => agir(desativarPush, 'Avisos desativados neste aparelho.')}>Desligar</button>
         </div>
