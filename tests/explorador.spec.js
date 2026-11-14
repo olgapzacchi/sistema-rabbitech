@@ -53,11 +53,13 @@ for (const [route, name] of PAGES) {
     page.on('dialog', (d) => d.dismiss()); // cancela confirmações e perguntas
     const count = await page.locator('main button:visible').count();
     let clicked = 0;
+    let repetidos = 0; // listas longas de botões iguais (ex.: dias do calendário): testa só alguns
     for (let i = 0; i < Math.min(count, 40); i++) {
       const btn = page.locator('main button:visible').nth(i);
       if (!(await btn.count())) break;
       const label = ((await btn.textContent()) || (await btn.getAttribute('title')) || '').trim();
       if (PERIGOSO.test(label) || (await btn.isDisabled())) continue;
+      if ((await btn.getAttribute('data-repetido')) !== null && ++repetidos > 3) continue;
       const before = errors.length;
       await btn.click({ timeout: 2000 }).catch(() => {});
       clicked++;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calculator, ClipboardList, Map, History, Grid2x2, BookOpen,
-  Tv, Music, Wrench, Users, Menu, X, LogOut, Code2, IdCard,
+  Tv, Music, Wrench, Users, Menu, X, LogOut, Code2, IdCard, CalendarDays, ChevronDown,
 } from 'lucide-react';
 import { isCloud, supabase, missingConfig } from './lib/supabase.js';
 import Login, { NewPassword, MissingConfig, AccessProblem } from './pages/Login.jsx';
@@ -20,11 +20,13 @@ import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
 import Codigo from './pages/Codigo.jsx';
 import Perfis from './pages/Perfis.jsx';
+import Calendario from './pages/Calendario.jsx';
 import { guardarConvitePendente, pegarConvitePendente } from './components/Convites.jsx';
 
 const NAV = [
   { section: 'Geral' },
   { to: '/', label: 'Início', icon: LayoutDashboard, end: true },
+  { to: '/calendario', label: 'Calendário', icon: CalendarDays },
   { section: 'Robô' },
   { to: '/calculadora', label: 'Calculadora', icon: Calculator },
   { to: '/saidas', label: 'Registro de saídas', icon: ClipboardList },
@@ -100,6 +102,16 @@ function Shell({ session }) {
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
 
+  // grupos do menu recolhíveis; o grupo da tela aberta sempre fica à vista
+  const [closed, setClosed] = useState(() => { try { return JSON.parse(localStorage.getItem('rabbitech.menu') || '[]'); } catch { return []; } });
+  const groups = NAV.reduce((acc, n) => (n.section ? [...acc, { name: n.section, items: [] }] : (acc.at(-1).items.push(n), acc)), []);
+  const here = groups.find((g) => g.items.some((n) => (n.end ? loc.pathname === n.to : loc.pathname.startsWith(n.to))))?.name;
+  const toggle = (name) => setClosed((c) => {
+    const next = c.includes(name) ? c.filter((x) => x !== name) : [...c, name];
+    try { localStorage.setItem('rabbitech.menu', JSON.stringify(next)); } catch { /* ignora */ }
+    return next;
+  });
+
   return (
     <div className={'shell' + (music.playing ? ' has-player' : '')}>
       <aside className={'sidebar' + (open ? ' open' : '')}>
@@ -119,13 +131,22 @@ function Shell({ session }) {
           </div>
         )}
         <nav>
-          {NAV.map((n, i) =>
-            n.section ? <div key={i} className="nav-section">{n.section}</div> : (
-              <NavLink key={n.to} to={n.to} end={n.end} className="nav-link" onClick={() => setOpen(false)}>
-                <n.icon size={18} /> <span>{n.label}</span>
-              </NavLink>
-            )
-          )}
+          {groups.map((g) => {
+            const aberto = !closed.includes(g.name) || g.name === here;
+            return (
+              <div key={g.name}>
+                <button className="nav-section nav-toggle" aria-expanded={aberto} onClick={() => toggle(g.name)}>
+                  <span>{g.name}</span>
+                  <ChevronDown size={13} style={{ transform: aberto ? 'none' : 'rotate(-90deg)' }} aria-hidden="true" />
+                </button>
+                {aberto && g.items.map((n) => (
+                  <NavLink key={n.to} to={n.to} end={n.end} className="nav-link" onClick={() => setOpen(false)}>
+                    <n.icon size={18} /> <span>{n.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
         <div className="sidebar-foot">
           {isCloud ? (
@@ -155,6 +176,7 @@ function Shell({ session }) {
           <Route path="/regras" element={<Regras />} />
           <Route path="/tv" element={<MediaHub kind="youtube" />} />
           <Route path="/music" element={<MediaHub kind="ytmusic" />} />
+          <Route path="/calendario" element={<Calendario />} />
           <Route path="/perfis" element={<Perfis />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/codigo" element={<Codigo />} />

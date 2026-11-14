@@ -51,6 +51,8 @@ nav { padding: 8px 10px; overflow-y: auto; flex: 1; }
   color: #cfd6e4; text-decoration: none; font-weight: 500; width: 100%;
   background: none; border: 0; cursor: pointer; text-align: left;
 }
+.nav-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; background: none; border: 0; cursor: pointer; text-align: left; }
+.nav-toggle:hover { color: #fff; }
 .nav-link { transition: background var(--ease), color var(--ease); }
 .nav-link svg { flex-shrink: 0; }
 .nav-link:hover { background: var(--sidebar-hover); color: #fff; }
@@ -248,9 +250,27 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .eq i { animation: none; height: 8px; }
-  .glass-player, .nav-link, .btn, .kcard { transition: none; }
+  .glass-player, .nav-link, .btn, .kcard, .cal-day { transition: none; }
   .spin { animation-duration: 3s; }
 }
+
+/* ---------- calendário ---------- */
+.cap::first-letter { text-transform: uppercase; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-dow { text-align: center; font-size: 12px; color: var(--ink-3); text-transform: uppercase; padding: 4px 0; }
+.cal-day {
+  min-height: 56px; border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: 4px 6px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;
+  transition: background var(--ease), border-color var(--ease);
+}
+.cal-day:hover { background: #f7faff; border-color: #b8c6dc; }
+.cal-day.out { color: var(--ink-3); background: transparent; border-style: dashed; }
+.cal-day.today { border-color: var(--blue); font-weight: 700; }
+.cal-day.sel { background: var(--blue); border-color: var(--blue); color: #fff; }
+.cal-marks { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; }
+.cal-next { display: flex; flex-direction: column; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 8px 0; cursor: pointer; min-width: 0; }
+.cal-next:last-child { border-bottom: 0; }
+@media (max-width: 700px) { .cal-day { min-height: 46px; padding: 3px 4px; } }
 
 /* ---------- perfis dos alunos ---------- */
 .profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
