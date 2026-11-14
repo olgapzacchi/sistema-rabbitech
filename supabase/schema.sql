@@ -526,3 +526,10 @@ begin
 end $$;
 
 notify pgrst, 'reload schema';
+
+-- Rabbitech Music passou a usar o YouTube (kind 'ytmusic')
+alter table public.media_links drop constraint if exists media_links_kind_check;
+alter table public.media_links add constraint media_links_kind_check check (kind in ('youtube', 'spotify', 'ytmusic'));
+alter table public.tv_playlists drop constraint if exists tv_playlists_kind_check;
+alter table public.tv_playlists add constraint tv_playlists_kind_check check (kind in ('youtube', 'spotify', 'ytmusic'));
+notify pgrst, 'reload schema';

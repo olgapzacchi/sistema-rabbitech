@@ -64,34 +64,13 @@ A cada atualização na branch `main`, a Vercel publica sozinha.
 
 Cota grátis: cerca de 100 buscas por dia.
 
-## 4. Busca da Rabbitech Music (Spotify)
+## 4. Rabbitech Music
 
-1. [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard) → **Create app** (marque *Web API*).
-2. Em *Settings*, copie **Client ID** e **Client secret**.
-3. Supabase → **Edge Functions → Secrets**: `SPOTIFY_CLIENT_ID` e `SPOTIFY_CLIENT_SECRET`.
+A Music usa o **YouTube** (categoria Música) com a mesma chave `YOUTUBE_API_KEY` da TV: toca a música
+inteira, sem login, no computador e no celular, e as playlists passam sozinhas para a próxima.
+(A integração antiga com Spotify — funções `spotify-search`/`spotify-auth` — ficou desativada no site.)
 
-### Conta Spotify Premium por equipe
-
-Cada equipe conecta a **sua** conta Premium em **Rabbitech Music → Conectar Spotify Premium da equipe**
-(só administradores da equipe). Os tokens ficam em `team_integrations`, que o site não lê; a função
-`spotify-auth` só entrega o token para membros daquela equipe.
-
-Uma vez, no painel do app do Spotify (developer.spotify.com → app → *Settings*):
-
-1. **Redirect URIs**: adicione `https://gfunjxrpermmzusklfyn.supabase.co/functions/v1/spotify-auth`.
-2. **User Management**: adicione o e-mail de **cada conta Spotify** que as equipes vão conectar
-   (apps em modo de desenvolvimento só aceitam contas cadastradas, até 25).
-
-Como toca:
-- **Computador**: o site vira um aparelho do Spotify e toca a música inteira pela conta da equipe.
-- **Celular**: o site controla o app do Spotify logado na conta da equipe (escolha o aparelho no player).
-- **Equipe sem conta conectada**: player embutido do Spotify, que usa a conta logada naquele navegador
-  (no celular, só 30 s de prévia).
-
-> O Spotify só toca em **um aparelho por vez** por conta: se duas pessoas da mesma equipe tocarem ao
-> mesmo tempo, a última assume.
-
-> As chaves ficam só no Supabase. Nunca coloque chaves secretas no código ou no chat.
+> No celular, a música para se a tela for bloqueada ou se trocar de aplicativo (limite do navegador).
 
 ## 5. Código do robô (GitHub) e redeploy pelo site
 

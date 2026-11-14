@@ -9,7 +9,7 @@
 //   - precisa (padrão): TODAS as palavras importantes precisam aparecer no título
 //     (ou no título + descrição, se titleOnly = false)
 //   - exclude: palavras proibidas (somem do resultado e vão como -palavra para o YouTube)
-//   - topic: "tech" restringe à categoria Ciência e Tecnologia, "edu" a Educação
+//   - topic: "tech" restringe à categoria Ciência e Tecnologia, "edu" a Educação, "music" a Música
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -67,6 +67,7 @@ Deno.serve(async (req: Request) => {
   };
   if (body.topic === "tech") params.videoCategoryId = "28";
   if (body.topic === "edu") params.videoCategoryId = "27";
+  if (body.topic === "music") params.videoCategoryId = "10";
   if (body.pageToken) params.pageToken = String(body.pageToken).slice(0, 100);
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
   url.search = new URLSearchParams(params).toString();

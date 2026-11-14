@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Search, Plus, Trash2, Play, Check, Pin, PinOff, ListPlus, ListVideo, Loader2, Link2,
   ChevronUp, ChevronDown, SkipForward, SkipBack, Pencil, SlidersHorizontal,
 } from 'lucide-react';
 import { useTable, insert, update, remove, isCloud } from '../lib/db.js';
 import { PageHead, ErrorBox, fmtDate } from '../components/ui.jsx';
-import { PROVIDERS, spotifyOpenUrl, isTouchDevice } from '../lib/media.js';
+import { PROVIDERS } from '../lib/media.js';
 import { useMusicPlayer } from '../components/MusicPlayer.jsx';
 
 // Central de mídia usada pela Rabbitech TV (YouTube) e pela Rabbitech Music (Spotify)
@@ -28,7 +28,7 @@ function Hub({ P }) {
   // Música usa o player global (continua tocando em outras telas); vídeo toca na própria página
   const [localPlaying, setLocalPlaying] = useState(null); // { video, queue?: [video], playlistName? }
   const global = useMusicPlayer();
-  const [playing, setPlaying] = kind === 'spotify' ? [global.playing, global.setPlaying] : [localPlaying, setLocalPlaying];
+  const [playing, setPlaying] = P.globalPlayer ? [global.playing, global.setPlaying] : [localPlaying, setLocalPlaying];
 
   // ---------- ações ----------
   async function ensureSaved(item, { pin } = {}) {
@@ -76,7 +76,6 @@ function Hub({ P }) {
         </div>
       </PageHead>
       <ErrorBox error={media.error || playlists.error || items.error} />
-      {kind === 'spotify' && isCloud && <SpotifyAccount />}
 
       <div className="split">
         <Player current={current} playing={playing} setPlaying={setPlaying} actions={actions} />
@@ -91,8 +90,7 @@ function Hub({ P }) {
 // ---------- player ----------
 function Player({ current, playing, setPlaying, actions }) {
   const P = actions.P;
-  const { mode, account } = useMusicPlayer();
-  const teamPlays = P.kind === 'spotify' && mode !== 'embed';
+
   if (!current) return <div className="card empty">Busque e clique em <b>{P.play}</b>.</div>;
   const src = P.embed(current.url);
   const queue = playing?.queue || [];
@@ -109,21 +107,12 @@ function Player({ current, playing, setPlaying, actions }) {
           </div>
         </div>
       )}
-      {P.kind === 'spotify' ? (
+      {P.globalPlayer ? (
         <div className="row" style={{ flexWrap: 'nowrap', gap: 16 }}>
-          {current.thumbnail
-            ? <img src={current.thumbnail} alt="" width="140" height="140" style={{ borderRadius: 10, objectFit: 'cover' }} />
-            : <div style={{ width: 140, height: 140, borderRadius: 10, background: 'var(--bg)', display: 'grid', placeItems: 'center' }}><Play size={28} /></div>}
-          <div className="stack" style={{ gap: 8 }}>
-            <div className="muted">Tocando no player lá embaixo. Pode trocar de tela que a música continua.</div>
-            {teamPlays
-              ? <div className="muted" style={{ fontSize: 13 }}>Pela conta da equipe: <b>{account.user}</b>{mode === 'connect' ? ' (no app do Spotify escolhido no player).' : ' — música inteira, aqui no site.'}</div>
-              : <>
-                {isTouchDevice() && <div className="muted" style={{ fontSize: 13 }}>No celular o Spotify só deixa tocar 30 segundos dentro de sites. Para ouvir inteira, abra no app:</div>}
-                <a className="btn" style={{ alignSelf: 'flex-start', background: '#1db954', borderColor: '#1db954', color: '#fff' }}
-                  href={spotifyOpenUrl(current.url)} target="_blank" rel="noreferrer">Abrir no Spotify ↗</a>
-              </>}
-          </div>
+          {current.thumbnail || P.thumbOf(current.url)
+            ? <img src={current.thumbnail || P.thumbOf(current.url)} alt="" width="200" height="112" style={{ borderRadius: 10, objectFit: 'cover' }} />
+            : <div style={{ width: 200, height: 112, borderRadius: 10, background: 'var(--bg)', display: 'grid', placeItems: 'center' }}><Play size={28} /></div>}
+          <div className="muted">Tocando no player lá embaixo. Pode trocar de tela que a música continua — e na playlist ela passa para a próxima sozinha.</div>
         </div>
       ) : src
         ? <iframe key={current.url} className="embed" src={src} style={P.frameStyle} title={current.title}
@@ -267,13 +256,13 @@ function SearchPanel({ byYtId, onPlay, actions }) {
             <label className="field">Excluir palavras (separe por espaço)
               <input type="text" value={opts.exclude} placeholder="Ex.: carro car nail" onChange={(e) => setOpts({ ...opts, exclude: e.target.value })} />
             </label>
-            <label className="field">Tipo de vídeo
+            {P.kind === 'youtube' && <label className="field">Tipo de vídeo
               <select value={opts.topic} onChange={(e) => setOpts({ ...opts, topic: e.target.value })}>
                 <option value="">Qualquer</option>
                 <option value="tech">Ciência e Tecnologia</option>
                 <option value="edu">Educação</option>
               </select>
-            </label>
+            </label>}
           </div>
         )}
         <div className="row" style={{ gap: 4 }}>
@@ -462,57 +451,6 @@ function PlaylistsPanel({ playlists, items, videos, current, setPlaying, actions
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// ---------- conta Spotify da equipe ----------
-const RESULTS = {
-  ok: ['green', 'Conta do Spotify conectada à equipe!'],
-  ok_sem_premium: ['amber', 'Conectado, mas a conta não é Premium: o site só consegue tocar prévias. Conecte uma conta Premium.'],
-  cancelado: ['amber', 'Conexão cancelada.'],
-  erro_expirado: ['red', 'O pedido de conexão expirou. Tente de novo.'],
-  erro_estado: ['red', 'Pedido de conexão inválido. Tente de novo.'],
-  erro_spotify: ['red', 'O Spotify recusou a conexão. Confira se a conta está liberada no app do Spotify (User Management).'],
-};
-
-function SpotifyAccount() {
-  const { account, startConnect, disconnect, mode, teamName, refreshAccount } = useMusicPlayer();
-  const [result, setResult] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('spotify');
-    if (p) {
-      setResult(RESULTS[p] || null);
-      window.history.replaceState(null, '', window.location.pathname);
-      refreshAccount();
-    }
-  }, [refreshAccount]);
-  const run = (fn) => async () => { setBusy(true); setErr(''); try { await fn(); } catch (e) { setErr(e.message); } finally { setBusy(false); } };
-  if (!account.loaded) return null;
-
-  return (
-    <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid #1db954' }}>
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <div>
-          <strong>Conta Spotify da equipe {teamName}</strong>
-          <div className="muted" style={{ fontSize: 13 }}>
-            {account.connected
-              ? <>Conectada: <b style={{ color: 'var(--ink)' }}>{account.user}</b> {account.product === 'premium' ? <span className="tag green">Premium</span> : <span className="tag amber">não é Premium</span>}
-                {' '}· só membros da {teamName} tocam por esta conta.
-                {mode === 'connect' && ' No celular, o site controla o app do Spotify logado nesta conta.'}</>
-              : <>Nenhuma conta conectada. O player usa a conta que estiver logada <b>neste navegador</b>{account.can_manage ? '.' : ' — peça ao administrador da equipe para conectar a conta Premium da equipe.'}</>}
-          </div>
-        </div>
-        {account.can_manage && (
-          account.connected
-            ? <button className="btn sm" disabled={busy} onClick={run(async () => { if (confirm('Desconectar a conta do Spotify da equipe?')) await disconnect(); })}>Desconectar</button>
-            : <button className="btn" style={{ background: '#1db954', borderColor: '#1db954', color: '#fff' }} disabled={busy} onClick={run(startConnect)}>Conectar Spotify Premium da equipe</button>
-        )}
-      </div>
-      {result && <div className={'tag ' + result[0]} style={{ marginTop: 10, padding: '8px 12px', whiteSpace: 'normal' }}>{result[1]}</div>}
-      {(err || account.error) && <div className="error" style={{ margin: '10px 0 0' }}>{err || account.error}</div>}
     </div>
   );
 }

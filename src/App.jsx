@@ -144,7 +144,7 @@ function Shell({ session }) {
           <Route path="/melhorias" element={<Melhorias />} />
           <Route path="/regras" element={<Regras />} />
           <Route path="/tv" element={<MediaHub kind="youtube" />} />
-          <Route path="/music" element={<MediaHub kind="spotify" />} />
+          <Route path="/music" element={<MediaHub kind="ytmusic" />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/codigo" element={<Codigo />} />
           <Route path="*" element={<Inicio />} />
