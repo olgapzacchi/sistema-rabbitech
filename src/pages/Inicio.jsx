@@ -3,6 +3,7 @@ import { Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-re
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, Legend } from 'recharts';
 import { useTable, insert, update, remove } from '../lib/db.js';
 import { PageHead, Kpi, ErrorBox, initials, fmtDate } from '../components/ui.jsx';
+import Avisos from '../components/Avisos.jsx';
 
 const COLS = [
   { id: 'todo', label: 'A fazer', dot: '#8a94a6' },
@@ -67,6 +68,7 @@ export default function Inicio() {
         <button className="btn primary" onClick={() => setShowForm((v) => !v)}><Plus size={16} /> Nova tarefa</button>
       </PageHead>
       <ErrorBox error={tasks.error || members.error} />
+      <Avisos />
 
       <div className="grid g4" style={{ marginBottom: 16 }}>
         <Kpi label="Tarefas abertas" value={tasks.rows.length - done.length} hint={`${overdue.length} atrasada(s)`} />
