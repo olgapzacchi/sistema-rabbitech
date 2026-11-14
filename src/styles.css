@@ -240,6 +240,14 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .eq i { animation: none; height: 8px; } .glass-player { transition: none; } }
 
+/* ---------- perfis dos alunos ---------- */
+.profile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.profile-card { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.profile-me { margin-bottom: 8px; }
+.profile-avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--blue-2); }
+.profile-avatar-init { display: inline-grid; place-items: center; font-weight: 700; color: var(--blue); font-size: 22px; }
+.profile-bio { margin: 0; font-size: 14px; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
+
 /* ---------- código do robô ---------- */
 .code-editor {
   font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #0b0f19; color: #e6edf6;

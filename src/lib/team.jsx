@@ -37,7 +37,7 @@ export function TeamProvider({ session, children, fallback, denied }) {
   if (state.loading) return fallback ?? null;
   if (!team) return denied ?? null;
   const value = {
-    teams: state.teams, team, teamId: team.id, role: team.role,
+    teams: state.teams, team, teamId: team.id, role: team.role, email,
     isAdmin: team.role === 'admin' || state.platform, isPlatformAdmin: state.platform,
     switchTeam, reload,
   };

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calculator, ClipboardList, Map, History, Grid2x2, BookOpen,
-  Tv, Music, Wrench, Users, Menu, X, LogOut, Code2,
+  Tv, Music, Wrench, Users, Menu, X, LogOut, Code2, IdCard,
 } from 'lucide-react';
 import { isCloud, supabase, missingConfig } from './lib/supabase.js';
 import Login, { NewPassword, MissingConfig, AccessProblem } from './pages/Login.jsx';
@@ -19,6 +19,7 @@ import { TeamProvider, useTeam } from './lib/team.jsx';
 import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
 import Codigo from './pages/Codigo.jsx';
+import Perfis from './pages/Perfis.jsx';
 
 const NAV = [
   { section: 'Geral' },
@@ -35,6 +36,7 @@ const NAV = [
   { to: '/regras', label: 'Regras', icon: BookOpen },
   { to: '/tv', label: 'Rabbitech TV', icon: Tv },
   { to: '/music', label: 'Rabbitech Music', icon: Music },
+  { to: '/perfis', label: 'Perfis', icon: IdCard },
   { to: '/equipe', label: 'Equipe', icon: Users },
 ];
 
@@ -145,6 +147,7 @@ function Shell({ session }) {
           <Route path="/regras" element={<Regras />} />
           <Route path="/tv" element={<MediaHub kind="youtube" />} />
           <Route path="/music" element={<MediaHub kind="ytmusic" />} />
+          <Route path="/perfis" element={<Perfis />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/codigo" element={<Codigo />} />
           <Route path="*" element={<Inicio />} />
