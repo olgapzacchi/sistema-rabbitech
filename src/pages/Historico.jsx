@@ -36,12 +36,12 @@ export default function Historico() {
           {rows.length ? (
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={chart} margin={{ left: -20, right: 10 }}>
-                <CartesianGrid vertical={false} stroke="#e4e8f0" />
+                <CartesianGrid vertical={false} stroke="var(--line)" />
                 <XAxis dataKey="round" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip labelFormatter={(l) => 'Round ' + l} />
                 <ReferenceLine y={avg} stroke="#8a94a6" strokeDasharray="4 4" />
-                <Line type="monotone" dataKey="Pontos" stroke="#1450d8" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="Pontos" stroke="var(--blue)" strokeWidth={2.5} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : <div className="empty">Salve rounds na calculadora para ver a evolução.</div>}

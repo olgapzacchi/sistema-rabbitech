@@ -52,7 +52,7 @@ export default function Regras() {
                 {!list.length && <div className="muted">Nenhum documento anexado.</div>}
                 {list.map((d) => (
                   <div key={d.id} className="row" style={{ padding: '8px 0', borderBottom: '1px solid var(--line)', flexWrap: 'nowrap' }}>
-                    <FileText size={18} color="#1450d8" />
+                    <FileText size={18} color="var(--blue)" />
                     <button className="nav-link" style={{ color: 'var(--ink)', padding: 0, flex: 1 }} onClick={() => setView(d)}>{d.title}</button>
                     <span className="muted" style={{ fontSize: 12 }}>{fmtDate(d.created_at)}</span>
                     <button className="icon-btn" title="Remover documento" aria-label="Remover documento" onClick={() => confirm('Remover documento?') && remove('documents', d.id)}><Trash2 size={14} /></button>

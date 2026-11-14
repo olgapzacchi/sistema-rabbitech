@@ -119,3 +119,22 @@ test('TV e Music: fixar por link e criar playlist', async ({ page }) => {
   await expect(page.getByText('Treino').first()).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('Aparência: escolher modo, cor e fundo e manter ao recarregar', async ({ page }) => {
+  const errors = watchErrors(page);
+  await freshStart(page);
+  await page.goto('/configuracoes');
+  await page.getByRole('button', { name: 'Escuro' }).click();
+  await page.getByRole('radio', { name: 'Dourado' }).click();
+  await page.getByRole('button', { name: 'Liso' }).click();
+  const html = page.locator('html');
+  await expect(html).toHaveAttribute('data-modo', 'dark');
+  await expect(html).toHaveAttribute('data-cor', 'dourado');
+  await expect(html).toHaveAttribute('data-fundo', 'liso');
+  await page.reload();
+  await expect(html).toHaveAttribute('data-cor', 'dourado');
+  await page.getByRole('button', { name: 'Voltar ao padrão' }).click();
+  await expect(html).toHaveAttribute('data-modo', 'light');
+  await expect(html).toHaveAttribute('data-cor', 'azul');
+  expect(errors).toEqual([]);
+});

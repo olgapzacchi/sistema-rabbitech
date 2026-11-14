@@ -7,8 +7,8 @@ import Avisos from '../components/Avisos.jsx';
 
 const COLS = [
   { id: 'todo', label: 'A fazer', dot: '#8a94a6' },
-  { id: 'doing', label: 'Fazendo', dot: '#1450d8' },
-  { id: 'done', label: 'Concluído', dot: '#12805c' },
+  { id: 'doing', label: 'Fazendo', dot: 'var(--blue)' },
+  { id: 'done', label: 'Concluído', dot: 'var(--green)' },
 ];
 
 function weekStart(d) {
@@ -139,14 +139,14 @@ export default function Inicio() {
           <h2>Produtividade por aluno</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={perMember} margin={{ left: -20 }}>
-              <CartesianGrid vertical={false} stroke="#e4e8f0" />
+              <CartesianGrid vertical={false} stroke="var(--line)" />
               <XAxis dataKey="nome" tick={{ fontSize: 12 }} interval={0} angle={-30} textAnchor="end" height={50} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Concluídas" stackId="a" fill="#1450d8" />
-              <Bar dataKey="Em andamento" stackId="a" fill="#0b0f19" />
-              <Bar dataKey="A fazer" stackId="a" fill="#c9d1e0" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Concluídas" stackId="a" fill="var(--blue)" />
+              <Bar dataKey="Em andamento" stackId="a" fill="var(--ink)" />
+              <Bar dataKey="A fazer" stackId="a" fill="var(--line-strong)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -154,11 +154,11 @@ export default function Inicio() {
           <h2>Tarefas concluídas por semana</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={weeks} margin={{ left: -20 }}>
-              <CartesianGrid vertical={false} stroke="#e4e8f0" />
+              <CartesianGrid vertical={false} stroke="var(--line)" />
               <XAxis dataKey="semana" tick={{ fontSize: 12 }} />
               <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Line type="monotone" dataKey="Concluídas" stroke="#1450d8" strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="Concluídas" stroke="var(--blue)" strokeWidth={2.5} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>

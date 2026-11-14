@@ -5,10 +5,10 @@ import { missions, missionResult } from '../lib/scoring.js';
 import { PageHead, ErrorBox } from '../components/ui.jsx';
 
 const QUADS = [
-  { id: 'forcas', label: 'Forças', color: '#1450d8', hint: 'O que o robô/equipe faz bem' },
-  { id: 'fraquezas', label: 'Fraquezas', color: '#0b0f19', hint: 'O que precisa melhorar' },
-  { id: 'oportunidades', label: 'Oportunidades', color: '#12805c', hint: 'Missões ou ideias a explorar' },
-  { id: 'ameacas', label: 'Ameaças', color: '#d92d20', hint: 'Riscos no dia do torneio' },
+  { id: 'forcas', label: 'Forças', color: 'var(--blue)', hint: 'O que o robô/equipe faz bem' },
+  { id: 'fraquezas', label: 'Fraquezas', color: 'var(--ink)', hint: 'O que precisa melhorar' },
+  { id: 'oportunidades', label: 'Oportunidades', color: 'var(--green)', hint: 'Missões ou ideias a explorar' },
+  { id: 'ameacas', label: 'Ameaças', color: 'var(--red)', hint: 'Riscos no dia do torneio' },
 ];
 
 export default function Analise() {
@@ -43,7 +43,7 @@ export default function Analise() {
                   <td>{tests}</td>
                   <td>{rate === null ? <span className="muted">sem testes</span> : (
                     <div className="row" style={{ flexWrap: 'nowrap' }}>
-                      <div className="bar" style={{ flex: 1 }}><div style={{ width: rate + '%', background: rate >= 70 ? '#1450d8' : rate >= 40 ? '#b54708' : '#d92d20' }} /></div>
+                      <div className="bar" style={{ flex: 1 }}><div style={{ width: rate + '%', background: rate >= 70 ? 'var(--blue)' : rate >= 40 ? 'var(--amber)' : 'var(--red)' }} /></div>
                       <b style={{ width: 42, textAlign: 'right' }}>{rate}%</b>
                     </div>)}
                   </td>

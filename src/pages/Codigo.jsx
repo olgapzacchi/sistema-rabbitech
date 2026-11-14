@@ -177,7 +177,7 @@ export default function Codigo() {
 
       {!isCloud && <div className="card empty">Esta tela precisa do Supabase (fica disponível no site publicado).</div>}
       {status && !status.canWrite && (
-        <div className="error" style={{ background: 'var(--amber-2)', color: '#93370d' }}>
+        <div className="error" style={{ background: 'var(--amber-2)', color: 'var(--amber-ink)' }}>
           <AlertTriangle size={14} style={{ verticalAlign: -2 }} /> Dá para ver e baixar, mas <b>salvar no GitHub</b> ainda não está ligado para esta equipe: o administrador cadastra o token do GitHub em <b>Equipe → Configurações da equipe</b>.
         </div>
       )}

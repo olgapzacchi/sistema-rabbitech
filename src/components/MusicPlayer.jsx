@@ -147,7 +147,7 @@ export function MiniPlayer() {
             <button className="glass-btn" title="Fechar player" onClick={close}><X size={14} /></button>
           </div>
           {error && (
-            <div className="glass-hint" style={{ background: 'rgba(217,45,32,.12)', color: '#912018' }}>
+            <div className="glass-hint" style={{ background: 'var(--red-2)', color: 'var(--red)' }}>
               {error} <a href={track.url} target="_blank" rel="noreferrer">Abrir no YouTube <ExternalLink size={11} /></a>
             </div>
           )}

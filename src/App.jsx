@@ -22,6 +22,7 @@ import Codigo from './pages/Codigo.jsx';
 import Perfis from './pages/Perfis.jsx';
 import Calendario from './pages/Calendario.jsx';
 import Configuracoes from './pages/Configuracoes.jsx';
+import { carregarTemaDaConta } from './lib/tema.js';
 import { guardarConvitePendente, pegarConvitePendente } from './components/Convites.jsx';
 
 const NAV = [
@@ -62,6 +63,7 @@ export default function App() {
 
   // Confere se a conta logada pertence a alguma equipe (public.is_team_member)
   const userId = session?.user?.id;
+  useEffect(() => { if (isCloud && userId) carregarTemaDaConta(session.user.email?.toLowerCase()); }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isCloud || !userId) return;
     setAccess('checking');

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Bell, BellOff, KeyRound, Loader2 } from 'lucide-react';
+import { Bell, BellOff, KeyRound, Loader2, Palette } from 'lucide-react';
 import { isCloud, supabase } from '../lib/db.js';
 import { PageHead } from '../components/ui.jsx';
 import { useTeam } from '../lib/team.jsx';
 import { estadoPush, ativarPush, desativarPush, testarPush, CATEGORIAS, lerCategorias, salvarCategorias } from '../lib/push.js';
 import { AccessAdmin } from './Equipe.jsx';
+import { MODOS, CORES, FUNDOS, PADRAO, temaAtual, definirTema } from '../lib/tema.js';
 
 const AVISO = {
   indisponivel: 'Este navegador não suporta notificações.',
@@ -13,22 +14,74 @@ const AVISO = {
 };
 
 export default function Configuracoes() {
-  const { email } = useTeam();
+  const { email } = useTeam() || {};
   return (
     <>
-      <PageHead title="Configurações" desc="Avisos, conta e acesso da equipe." />
+      <PageHead title="Configurações" desc="Aparência, avisos, conta e acesso da equipe." />
       {!isCloud ? (
-        <div className="card empty">As configurações ficam disponíveis no site publicado.</div>
+        <div className="grid g2">
+          <Aparencia email={email} />
+          <div className="card empty">Avisos, senha e acesso da equipe ficam disponíveis no site publicado.</div>
+        </div>
       ) : (
         <>
-          <div className="grid g2">
+          <div className="grid g2" style={{ alignItems: 'start' }}>
+            <div className="stack">
+              <Aparencia email={email} />
+              <Senha />
+            </div>
             <Notificacoes email={email} />
-            <Senha />
           </div>
           <AccessAdmin />
         </>
       )}
     </>
+  );
+}
+
+function Aparencia({ email }) {
+  const [t, setT] = useState(temaAtual());
+  const [msg, setMsg] = useState('');
+
+  async function escolher(parte) {
+    const novo = { ...t, ...parte };
+    setT(novo); setMsg('');
+    try { await definirTema(novo, email); } catch (e) { setMsg(`Aplicado aqui, mas não consegui salvar na conta: ${e.message}`); }
+  }
+  const nomeCor = CORES.find(([k]) => k === t.cor)?.[1];
+
+  return (
+    <div className="card stack">
+      <h2 style={{ margin: 0 }}><Palette size={15} style={{ verticalAlign: -2 }} /> Aparência</h2>
+      <div className="muted" style={{ fontSize: 13 }}>Só você vê essa escolha. Ela acompanha a sua conta em qualquer aparelho e não muda nada para os outros.</div>
+
+      <div className="stack" style={{ gap: 6 }}>
+        <b style={{ fontSize: 13 }}>Modo</b>
+        <div className="seg" role="group" aria-label="Modo" style={{ alignSelf: 'flex-start' }}>
+          {MODOS.map(([k, nome]) => <button key={k} type="button" className={t.modo === k ? 'on' : ''} aria-pressed={t.modo === k} onClick={() => escolher({ modo: k })}>{nome}</button>)}
+        </div>
+      </div>
+
+      <div className="stack" style={{ gap: 6 }}>
+        <b style={{ fontSize: 13 }}>Cor <span className="muted" style={{ fontWeight: 400 }}>· {nomeCor}</span></b>
+        <div className="swatches" role="radiogroup" aria-label="Cor de destaque">
+          {CORES.map(([k, nome, hex]) => (
+            <button key={k} type="button" role="radio" aria-checked={t.cor === k} aria-label={nome} title={nome}
+              className="swatch" style={{ '--sw': hex }} onClick={() => escolher({ cor: k })} />
+          ))}
+        </div>
+      </div>
+
+      <div className="stack" style={{ gap: 6 }}>
+        <b style={{ fontSize: 13 }}>Fundo</b>
+        <div className="seg" role="group" aria-label="Fundo" style={{ alignSelf: 'flex-start' }}>
+          {FUNDOS.map(([k, nome]) => <button key={k} type="button" className={t.fundo === k ? 'on' : ''} aria-pressed={t.fundo === k} onClick={() => escolher({ fundo: k })}>{nome}</button>)}
+        </div>
+      </div>
+
+      {msg && <div className="error" style={{ margin: 0 }}>{msg}</div>}
+      <button type="button" className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => escolher(PADRAO)}>Voltar ao padrão</button>
+    </div>
   );
 }
 
