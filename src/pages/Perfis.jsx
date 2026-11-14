@@ -116,7 +116,26 @@ function MeuPerfil({ mine, teamId, email, photoUrl, onSaved, onError }) {
   const [bio, setBio] = useState(mine.bio || '');
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [editando, setEditando] = useState(false);
   const preview = file ? URL.createObjectURL(file) : photoUrl;
+
+  if (!editando) {
+    return (
+      <div className="card profile-me row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start', gap: 16 }}>
+        <Avatar name={mine.display_name || email} url={photoUrl} />
+        <div className="stack" style={{ flex: 1, minWidth: 0, gap: 4 }}>
+          <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+            <div style={{ minWidth: 0 }}>
+              <b className="ellipsis" style={{ display: 'block' }}>{mine.display_name || email.split('@')[0]}</b>
+              <small className="muted">Seu perfil · só a equipe vê</small>
+            </div>
+            <button className="btn sm" onClick={() => setEditando(true)}>Editar perfil</button>
+          </div>
+          {mine.bio ? <p className="profile-bio">{mine.bio}</p> : <span className="muted" style={{ fontSize: 13 }}>Você ainda não escreveu uma bio.</span>}
+        </div>
+      </div>
+    );
+  }
 
   async function save(e) {
     e.preventDefault();
@@ -137,6 +156,7 @@ function MeuPerfil({ mine, teamId, email, photoUrl, onSaved, onError }) {
       }, { onConflict: 'team_id,email' });
       if (error) throw error;
       setFile(null);
+      setEditando(false);
       onSaved('Perfil salvo.');
     } catch (x) { onError(x.message); } finally { setBusy(false); }
   }
@@ -173,7 +193,7 @@ function MeuPerfil({ mine, teamId, email, photoUrl, onSaved, onError }) {
         </div>
       </div>
       <div className="row" style={{ justifyContent: 'space-between', marginTop: 12 }}>
-        <small className="muted">Você pode trocar seu nome, bio e foto quando quiser.</small>
+        <button type="button" className="btn" onClick={() => { setEditando(false); setFile(null); }}>Cancelar</button>
         <button className="btn primary" disabled={busy}>
           {busy ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Salvar perfil
         </button>
