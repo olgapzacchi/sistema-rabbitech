@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
+import { CriarEquipe, EntrarEquipe } from '../components/Convites.jsx';
 
 const MESSAGES = {
   'Invalid login credentials': 'E-mail ou senha incorretos.',
@@ -127,6 +128,12 @@ export function AccessProblem({ kind, email }) {
               O Supabase ainda não tem o esquema atual. Rode o arquivo <code>supabase/schema.sql</code> no
               SQL Editor do Supabase e recarregue esta página.
             </p>
+          </>
+        )}
+        {kind === 'denied' && (
+          <>
+            <CriarEquipe onDone={() => window.location.reload()} />
+            <EntrarEquipe onDone={() => window.location.reload()} />
           </>
         )}
         <div className="row">

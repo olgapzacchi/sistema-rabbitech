@@ -20,6 +20,7 @@ import Melhorias from './pages/Melhorias.jsx';
 import Equipe from './pages/Equipe.jsx';
 import Codigo from './pages/Codigo.jsx';
 import Perfis from './pages/Perfis.jsx';
+import { guardarConvitePendente, pegarConvitePendente } from './components/Convites.jsx';
 
 const NAV = [
   { section: 'Geral' },
@@ -46,6 +47,7 @@ export default function App() {
   const [access, setAccess] = useState('checking'); // checking | ok | denied | noschema
 
   useEffect(() => {
+    guardarConvitePendente();
     if (!isCloud) { setSession(null); return; }
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data } = supabase.auth.onAuthStateChange((event, s) => {
@@ -60,10 +62,16 @@ export default function App() {
   useEffect(() => {
     if (!isCloud || !userId) return;
     setAccess('checking');
-    supabase.rpc('is_team_member').then(({ data, error }) => {
+    (async () => {
+      const convite = pegarConvitePendente();
+      if (convite) {
+        const { error } = await supabase.rpc('entrar_por_convite', { p_token: convite });
+        if (error) alert(error.message);
+      }
+      const { data, error } = await supabase.rpc('is_team_member');
       if (error) setAccess('noschema');
       else setAccess(data ? 'ok' : 'denied');
-    });
+    })();
   }, [userId]);
 
   if (missingConfig) return <MissingConfig />;
