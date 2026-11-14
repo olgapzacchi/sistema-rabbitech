@@ -23,12 +23,18 @@ segurança (RLS), espaço para PDFs e os 10 alunos já cadastrados. Pode ser rod
 | `media_links`, `tv_playlists`, `tv_playlist_items` | Rabbitech TV e Music |
 | `allowed_emails` | Quem pode usar o site |
 
-### Liberar alunos
+### Equipes e acesso
 
-Só entram e-mails cadastrados em `allowed_emails`:
+O site é **multi-equipe**: cada equipe (`teams`) tem os próprios dados, membros, conta Spotify e repositório
+do robô. Uma equipe não vê nada da outra (RLS por `team_id`).
+
+- Liberar um aluno: **Equipe → Acesso à plataforma → Liberar** (só administradores da equipe).
+- Criar equipe nova: **Equipe → Criar nova equipe** (só administradores da plataforma, tabela `platform_admins`).
+- Pelo SQL, se precisar:
 
 ```sql
-insert into public.allowed_emails (email) values ('aluno@exemplo.com') on conflict do nothing;
+insert into public.team_members (team_id, email, role)
+select id, 'aluno@exemplo.com', 'member' from public.teams where name = 'Rabbitech';
 ```
 
 Se alguém não receber o e-mail de confirmação:
@@ -64,8 +70,26 @@ Cota grátis: cerca de 100 buscas por dia.
 2. Em *Settings*, copie **Client ID** e **Client secret**.
 3. Supabase → **Edge Functions → Secrets**: `SPOTIFY_CLIENT_ID` e `SPOTIFY_CLIENT_SECRET`.
 
-O player toca a música inteira no computador para quem está logado no Spotify no navegador. No celular, o
-Spotify libera só 30 s dentro de sites; o botão **Abrir no Spotify** abre a música inteira no app.
+### Conta Spotify Premium por equipe
+
+Cada equipe conecta a **sua** conta Premium em **Rabbitech Music → Conectar Spotify Premium da equipe**
+(só administradores da equipe). Os tokens ficam em `team_integrations`, que o site não lê; a função
+`spotify-auth` só entrega o token para membros daquela equipe.
+
+Uma vez, no painel do app do Spotify (developer.spotify.com → app → *Settings*):
+
+1. **Redirect URIs**: adicione `https://gfunjxrpermmzusklfyn.supabase.co/functions/v1/spotify-auth`.
+2. **User Management**: adicione o e-mail de **cada conta Spotify** que as equipes vão conectar
+   (apps em modo de desenvolvimento só aceitam contas cadastradas, até 25).
+
+Como toca:
+- **Computador**: o site vira um aparelho do Spotify e toca a música inteira pela conta da equipe.
+- **Celular**: o site controla o app do Spotify logado na conta da equipe (escolha o aparelho no player).
+- **Equipe sem conta conectada**: player embutido do Spotify, que usa a conta logada naquele navegador
+  (no celular, só 30 s de prévia).
+
+> O Spotify só toca em **um aparelho por vez** por conta: se duas pessoas da mesma equipe tocarem ao
+> mesmo tempo, a última assume.
 
 > As chaves ficam só no Supabase. Nunca coloque chaves secretas no código ou no chat.
 
