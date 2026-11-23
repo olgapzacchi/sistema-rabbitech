@@ -24,13 +24,13 @@ test('Kanban: criar tarefa, atribuir aluno e concluir', async ({ page }) => {
 test('Calculadora: pontuar, salvar round e ver no Histórico', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/calculadora');
-  await expect(page.locator('.score-box .big')).toHaveText('50'); // 6 fichas de precisão = 50
+  await expect(page.locator('.score-box .big')).toHaveText('70'); // 6 fichas de precisão (50) + M10 que já começa pontuada (20)
   await page.getByText('Drone já não toca o tapete').click();
-  await expect(page.locator('.score-box .big')).toHaveText('70');
+  await expect(page.locator('.score-box .big')).toHaveText('90');
   await page.getByRole('button', { name: 'Salvar round' }).click();
-  await expect(page.getByText('Round salvo com 70 pontos.')).toBeVisible();
+  await expect(page.getByText('Round salvo com 90 pontos.')).toBeVisible();
   await page.goto('/historico');
-  await expect(page.locator('.kpi', { hasText: 'Melhor round' })).toContainText('70');
+  await expect(page.locator('.kpi', { hasText: 'Melhor round' })).toContainText('90');
   await expect(page.locator('.kpi', { hasText: 'Quantidade de rounds' })).toContainText('1');
   expect(errors).toEqual([]);
 });
@@ -59,7 +59,12 @@ test('Estratégia: saída com missões aparece marcada no mapa', async ({ page }
   await card.getByRole('button', { name: /M03$/ }).click();
   await card.getByRole('button', { name: /M04$/ }).click();
   await expect(card.locator('div', { hasText: /^Rota:/ }).first()).toContainText('M03 → M04');
-  await expect(page.locator('.score-box .big')).toHaveText('60');
+  // missões 60 + pontos fixos 90 (fichas 50 + inspeção 20 + M10 20)
+  await expect(page.locator('.score-box .big')).toHaveText('150');
+  await page.getByLabel(/Fichas de precisão/).uncheck();
+  await expect(page.locator('.score-box .big')).toHaveText('100');
+  await page.getByLabel(/Fichas de precisão/).check();
+  await expect(page.getByLabel(/Missão compartilhada/)).toBeDisabled(); // sem a M07 numa saída
   await expect(page.locator('.mapbox polyline')).toHaveCount(2); // rota automática (contorno + linha)
   expect(errors).toEqual([]);
 });

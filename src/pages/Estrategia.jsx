@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, Pencil, Undo2, Eraser, Check, Copy } from 'lucide-react';
 import { useTable, insert, update, remove } from '../lib/db.js';
-import { missions, extrasDe, EXTRAS_PONTOS, plannedMissionPoints } from '../lib/scoring.js';
+import { missions, missionById, extrasDe, EXTRAS_PONTOS, plannedMissionPoints } from '../lib/scoring.js';
 import { PageHead, ErrorBox } from '../components/ui.jsx';
 
 const COLORS = ['#1450d8', '#f59e0b', '#e11d48', '#10b981', '#8b5cf6', '#06b6d4', '#f97316', '#0b0f19'];
@@ -98,7 +98,7 @@ export default function Estrategia() {
                   {mine.filter((s) => s.side === side).length === 0 && <div className="empty">Nenhuma saída neste lado.</div>}
                   <div className="stack" style={{ gap: 10 }}>
                     {mine.filter((s) => s.side === side).map((s) => (
-                      <SortieCard key={s.id} s={s} extras={extras} editing={editing === s.id} onEdit={() => setEditing(editing === s.id ? null : s.id)} />
+                      <SortieCard key={s.id} s={s} editing={editing === s.id} onEdit={() => setEditing(editing === s.id ? null : s.id)} />
                     ))}
                   </div>
                 </div>
@@ -150,11 +150,11 @@ function StrategyInfo({ st, onDelete }) {
   );
 }
 
-function SortieCard({ s, extras, editing, onEdit }) {
+function SortieCard({ s, editing, onEdit }) {
   const [name, setName] = useState(s.name);
   const ids = s.mission_ids || [];
   const toggle = (id) => update('sorties', s.id, { mission_ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] }); // a ordem do clique é a ordem da rota
-  const pts = ids.reduce((a, id) => a + plannedMissionPoints(id, extras), 0);
+  const pts = ids.reduce((a, id) => a + (missionById[id]?.max || 0), 0);
   return (
     <div style={{ border: '1px solid var(--line)', borderLeft: `4px solid ${s.color}`, borderRadius: 10, padding: 10 }}>
       <div className="row">
