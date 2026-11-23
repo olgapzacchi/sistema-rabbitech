@@ -787,3 +787,10 @@ create policy "prefs_edita_proprio" on public.user_prefs for update to authentic
   using (email = public.jwt_email()) with check (email = public.jwt_email());
 
 notify pgrst, 'reload schema';
+
+alter table public.strategies
+  add column if not exists extras jsonb not null
+  default '{"tokens": true, "inspection": true, "m10": true, "shared": false}'::jsonb
+  check (jsonb_typeof(extras) = 'object');
+
+notify pgrst, 'reload schema';

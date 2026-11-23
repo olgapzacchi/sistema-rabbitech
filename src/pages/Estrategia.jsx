@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, Pencil, Undo2, Eraser, Check, Copy } from 'lucide-react';
 import { useTable, insert, update, remove } from '../lib/db.js';
-import { missions, missionById } from '../lib/scoring.js';
+import { missions, extrasDe, EXTRAS_PONTOS, plannedMissionPoints } from '../lib/scoring.js';
 import { PageHead, ErrorBox } from '../components/ui.jsx';
 
 const COLORS = ['#1450d8', '#f59e0b', '#e11d48', '#10b981', '#8b5cf6', '#06b6d4', '#f97316', '#0b0f19'];
@@ -23,10 +23,15 @@ export default function Estrategia() {
     .filter((s) => s.strategy_id === currentId)
     .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
 
+  const extras = extrasDe(current);
   const totals = useMemo(() => {
-    const sum = (list) => [...new Set(list.flatMap((s) => s.mission_ids || []))].reduce((a, id) => a + (missionById[id]?.max || 0), 0);
-    return { vermelho: sum(mine.filter((s) => s.side === 'vermelho')), azul: sum(mine.filter((s) => s.side === 'azul')), total: sum(mine) };
-  }, [mine]);
+    const sum = (list) => [...new Set(list.flatMap((s) => s.mission_ids || []))].reduce((a, id) => a + plannedMissionPoints(id, extras), 0);
+    const fixos = ['tokens', 'inspection', 'm10'].reduce((acc, k) => acc + (extras[k] ? EXTRAS_PONTOS[k] : 0), 0);
+    const missoes = sum(mine);
+    return { vermelho: sum(mine.filter((s) => s.side === 'vermelho')), azul: sum(mine.filter((s) => s.side === 'azul')), missoes, fixos, total: missoes + fixos };
+  }, [mine, extras]); // eslint-disable-line react-hooks/exhaustive-deps
+  const temM07 = mine.some((s) => (s.mission_ids || []).includes(7));
+  const marcar = (k) => update('strategies', current.id, { extras: { ...extras, [k]: !extras[k] } });
 
   async function newStrategy() {
     const name = prompt('Nome da nova estratégia:', `Estratégia ${strategies.rows.length + 1}`);
@@ -36,7 +41,7 @@ export default function Estrategia() {
   }
   async function duplicate() {
     if (!current) return;
-    const st = await insert('strategies', { name: current.name + ' (cópia)', notes: current.notes, plan_b: current.plan_b });
+    const st = await insert('strategies', { name: current.name + ' (cópia)', notes: current.notes, plan_b: current.plan_b, extras: extrasDe(current) });
     for (const s of mine) {
       await insert('sorties', { ...s, strategy_id: st.id }); // id/datas são gerados pelo banco
     }
@@ -93,7 +98,7 @@ export default function Estrategia() {
                   {mine.filter((s) => s.side === side).length === 0 && <div className="empty">Nenhuma saída neste lado.</div>}
                   <div className="stack" style={{ gap: 10 }}>
                     {mine.filter((s) => s.side === side).map((s) => (
-                      <SortieCard key={s.id} s={s} editing={editing === s.id} onEdit={() => setEditing(editing === s.id ? null : s.id)} />
+                      <SortieCard key={s.id} s={s} extras={extras} editing={editing === s.id} onEdit={() => setEditing(editing === s.id ? null : s.id)} />
                     ))}
                   </div>
                 </div>
@@ -109,7 +114,20 @@ export default function Estrategia() {
                 <div><span className="tag red">Vermelho</span> <b style={{ fontSize: 18, marginLeft: 4 }}>{totals.vermelho}</b></div>
                 <div><span className="tag blue">Azul</span> <b style={{ fontSize: 18, marginLeft: 4 }}>{totals.azul}</b></div>
               </div>
-              <div style={{ color: '#b4bccb', fontSize: 12, marginTop: 10 }}>Soma da pontuação máxima das missões planejadas (sem repetir missão).</div>
+              <div style={{ color: '#b4bccb', fontSize: 12, marginTop: 10 }}>Missões planejadas {totals.missoes} + pontos fixos {totals.fixos}. A pontuação máxima de cada missão, sem repetir missão.</div>
+              <div className="stack" style={{ gap: 6, marginTop: 12, paddingTop: 12, borderTop: '1px solid #2a3346' }} role="group" aria-label="Pontos fixos">
+                {[['tokens', 'Fichas de precisão (6 fichas)', EXTRAS_PONTOS.tokens], ['inspection', 'Inspeção de equipamento', EXTRAS_PONTOS.inspection],
+                  ['m10', 'Missão 10 (já começa feita)', EXTRAS_PONTOS.m10]].map(([k, nome, pts]) => (
+                  <label key={k} className="cond" style={{ padding: 0, alignItems: 'center', color: '#e6edf6' }}>
+                    <input type="checkbox" checked={!!extras[k]} onChange={() => marcar(k)} style={{ accentColor: '#fff' }} />
+                    <span>{nome} <b>· +{pts}</b></span>
+                  </label>
+                ))}
+                <label className="cond" style={{ padding: 0, alignItems: 'center', color: '#e6edf6', opacity: temM07 ? 1 : .6 }}>
+                  <input type="checkbox" checked={!!extras.shared && temM07} disabled={!temM07} onChange={() => marcar('shared')} style={{ accentColor: '#fff' }} />
+                  <span>Missão compartilhada (cooperação da M07) <b>· +{EXTRAS_PONTOS.shared}</b>{!temM07 && <span style={{ fontSize: 12 }}> · coloque a M07 numa saída</span>}</span>
+                </label>
+              </div>
             </div>
             <StrategyInfo key={current.id} st={current} onDelete={delStrategy} />
           </div>
@@ -132,11 +150,11 @@ function StrategyInfo({ st, onDelete }) {
   );
 }
 
-function SortieCard({ s, editing, onEdit }) {
+function SortieCard({ s, extras, editing, onEdit }) {
   const [name, setName] = useState(s.name);
   const ids = s.mission_ids || [];
   const toggle = (id) => update('sorties', s.id, { mission_ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] }); // a ordem do clique é a ordem da rota
-  const pts = ids.reduce((a, id) => a + (missionById[id]?.max || 0), 0);
+  const pts = ids.reduce((a, id) => a + plannedMissionPoints(id, extras), 0);
   return (
     <div style={{ border: '1px solid var(--line)', borderLeft: `4px solid ${s.color}`, borderRadius: 10, padding: 10 }}>
       <div className="row">

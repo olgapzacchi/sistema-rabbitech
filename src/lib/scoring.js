@@ -4,7 +4,8 @@ import { missions, PRECISION } from '../data/missions.js';
 const clamp = (n, a, b) => Math.max(a, Math.min(b, Number(n) || 0));
 
 export function emptyRound() {
-  return { values: {}, tokens: 6, inspection: false, dock15: 'mine' };
+  // M10 (micro-habitats) já começa pontuada: os habitats estão na posição inicial até alguém mexer
+  return { values: { m10_spider: true, m10_snail: true }, tokens: 6, inspection: false, dock15: 'mine' };
 }
 
 function conditionPoints(round, m, c) {
@@ -20,7 +21,7 @@ function conditionPoints(round, m, c) {
   if (c.choice) return c.choice[clamp(v[k] || 0, 0, c.choice.length - 1)][1];
   if (!check(k)) return 0;
   if (c.requires && c.requires.some((r) => !check('m' + m.id + '_' + r))) return 0;
-  if (m.id === 4 && c.key === 'leaf2' && (!check('m4_katStart') || check('m4_katOutsideAny') || check('m4_katOutsideEnd'))) return 0;
+  if (m.id === 4 && c.key === 'leaf2' && (check('m4_katOutsideAny') || check('m4_katOutsideEnd'))) return 0;
   if (m.id === 7 && (c.key === 'bonusOur' || c.key === 'bonusOther') && check('m7_noOpponent')) return 0;
   if (m.id === 15 && c.key === 'envBonus') {
     const dock = round.dock15 || 'mine';
@@ -62,14 +63,26 @@ export function scoreRound(round) {
 }
 
 export const missionById = Object.fromEntries(missions.map((m) => [m.id, m]));
+
+// Estratégia: pontos "fixos" que não dependem de uma saída e podem ser marcados/desmarcados
+export const EXTRAS_PADRAO = { tokens: true, inspection: true, m10: true, shared: false };
+export const EXTRAS_PONTOS = { tokens: PRECISION[6], inspection: 20, m10: 20, shared: 20 };
+export const extrasDe = (st) => ({ ...EXTRAS_PADRAO, ...(st?.extras || {}) });
+
+// pontos de uma missão colocada numa saída: a M10 vem do item "Missão 10" e os 20 pts de
+// cooperação da M07 só contam se a "Missão compartilhada" estiver marcada
+export function plannedMissionPoints(id, extras) {
+  if (id === 10) return 0;
+  if (id === 7) return 20 + (extras.shared ? 20 : 0);
+  return missionById[id]?.max || 0;
+}
 export { missions, PRECISION };
 
 // Caixas extras (restrições/condições especiais) exibidas abaixo de cada missão
 export function extraChecks(m) {
   if (m.special === 'leaf') return [
-    ['m4_katStart', 'O inseto está na posição inicial (exigido para o bônus)'],
-    ['m4_katOutsideAny', 'O inseto saiu completamente do habitat em algum momento (perde o bônus)'],
-    ['m4_katOutsideEnd', 'O inseto terminou completamente fora do habitat (zera a M04)'],
+    ['m4_katOutsideAny', 'O inseto saiu completamente do habitat das folhas em algum momento da partida (perde o bônus)'],
+    ['m4_katOutsideEnd', 'O inseto terminou completamente fora do habitat das folhas (zera a M04)'],
     ['m4_touch', 'O modelo toca equipamento no fim (zera a missão)'],
   ];
   if (m.special === 'fungus') return [

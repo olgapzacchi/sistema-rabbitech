@@ -9,9 +9,9 @@ export const missions = [
 {id:3,name:"Vire a Rocha",en:"Flip the Rock",emoji:"🪨",desc:"Abaixe a bandeira de pesquisa e, se possível, devolva a rocha ao ponto inicial.",max:30,criteria:[
 {key:"flag",label:"Bandeira de pesquisa abaixada",points:20},
 {key:"rock",label:"Bônus: rocha devolvida à posição inicial",points:10,requires:["flag"]}]},
-{id:4,name:"Folhas da Sorte",en:"Lucky Leaves",emoji:"🍃",desc:"Retire folhas do ninho sem deslocar o inseto para fora do habitat.",max:30,ne:true,criteria:[
+{id:4,name:"Folhas da Sorte",en:"Lucky Leaves",emoji:"🍃",desc:"Retire folhas do ninho sem tirar o inseto do habitat das folhas (ninho + área marcada no tapete ao redor).",max:30,ne:true,criteria:[
 {key:"leaf1",label:"Uma folha completamente removida e sem tocar no ninho",points:10},
-{key:"leaf2",label:"Bônus: segunda folha removida e inseto na posição inicial",points:20,requires:["leaf1"]}],special:"leaf"},
+{key:"leaf2",label:"Bônus: segunda folha removida (vale só se o inseto nunca saiu completamente do habitat)",points:20,requires:["leaf1"]}],special:"leaf"},
 {id:5,name:"Raízes que se Estendem",en:"Reaching Roots",emoji:"🌱",desc:"Estenda a raiz além da fronteira da floresta.",max:20,ne:true,criteria:[
 {key:"rootState",label:"Estado da raiz",points:0,choice:[["Não estendida",0],["Parcialmente estendida",10],["Completamente estendida",20]]}]},
 {id:6,name:"Correria das Formigas Cortadeiras",en:"Leafcutter Frenzy",emoji:"🐜",desc:"Leve a formiga ao ninho com fragmentos de folhas dentro dele.",max:30,criteria:[
