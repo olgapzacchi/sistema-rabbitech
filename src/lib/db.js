@@ -14,7 +14,7 @@ const SERVER_FIELDS = ['id', 'created_at', 'updated_at', 'created_by', 'team_id'
 // ---------- equipe atual ----------
 // Todas as tabelas de dados são separadas por equipe (coluna team_id + RLS no banco).
 const TEAM_TABLES = new Set(['members', 'team_tasks', 'strategies', 'sorties', 'rounds', 'sortie_logs', 'swot_items',
-  'improvements', 'documents', 'media_links', 'tv_playlists', 'tv_playlist_items', 'code_changes', 'team_events']);
+  'improvements', 'documents', 'media_links', 'tv_playlists', 'tv_playlist_items', 'code_changes', 'team_events', 'mission_tags']);
 let currentTeam = null;
 export function setCurrentTeam(id) { currentTeam = id; }
 export const getCurrentTeam = () => currentTeam;

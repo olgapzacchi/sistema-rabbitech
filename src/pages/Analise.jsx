@@ -1,87 +1,55 @@
-import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useTable, insert, remove } from '../lib/db.js';
-import { missions, missionResult } from '../lib/scoring.js';
+import { missions, missionById } from '../lib/scoring.js';
 import { PageHead, ErrorBox } from '../components/ui.jsx';
 
-const QUADS = [
-  { id: 'forcas', label: 'Forças', color: 'var(--blue)', hint: 'O que o robô/equipe faz bem' },
-  { id: 'fraquezas', label: 'Fraquezas', color: 'var(--ink)', hint: 'O que precisa melhorar' },
-  { id: 'oportunidades', label: 'Oportunidades', color: 'var(--green)', hint: 'Missões ou ideias a explorar' },
-  { id: 'ameacas', label: 'Ameaças', color: 'var(--red)', hint: 'Riscos no dia do torneio' },
+const CAIXAS = [
+  { id: 'facil', label: 'Fácil', color: 'var(--green)', hint: 'O robô faz sem muito esforço ou teste' },
+  { id: 'dificil', label: 'Difícil', color: 'var(--amber)', hint: 'Exige muito teste, precisão ou tempo' },
+  { id: 'vantajosa', label: 'Vantajosa', color: 'var(--blue)', hint: 'Compensa: muitos pontos pelo esforço' },
+  { id: 'desvantajosa', label: 'Desvantajosa', color: 'var(--red)', hint: 'Não compensa: poucos pontos pelo esforço' },
 ];
 
+const nome = (m) => `M${String(m.id).padStart(2, '0')} · ${m.name} · ${m.max} pts`;
+
 export default function Analise() {
-  const logs = useTable('sortie_logs');
-  const rounds = useTable('rounds');
-  const swot = useTable('swot_items');
-
-  const stats = missions.map((m) => {
-    const tests = logs.rows.filter((l) => (l.mission_ids || []).includes(m.id));
-    const score = tests.reduce((a, l) => a + (l.worked === 'sim' ? 1 : l.worked === 'parcial' ? 0.5 : 0), 0);
-    const pts = rounds.rows.filter((r) => r.values?.values).map((r) => missionResult(r.values, m).total);
-    return {
-      m, tests: tests.length,
-      rate: tests.length ? Math.round((score / tests.length) * 100) : null,
-      avgPts: pts.length ? Math.round(pts.reduce((a, b) => a + b, 0) / pts.length) : null,
-    };
-  });
-
+  const tags = useTable('mission_tags');
   return (
     <>
-      <PageHead title="Análise do tapete / SWOT" desc="Taxa de sucesso por missão (dos testes de saída) e média de pontos nos rounds." />
-      <ErrorBox error={swot.error} />
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h2>Missões do tapete</h2>
-        <div className="table-wrap" tabIndex={0}>
-          <table className="table">
-            <thead><tr><th>Missão</th><th>Testes</th><th style={{ width: '35%' }}>Taxa de sucesso</th><th>Média nos rounds</th></tr></thead>
-            <tbody>
-              {stats.map(({ m, tests, rate, avgPts }) => (
-                <tr key={m.id}>
-                  <td><span className="tag dark">M{String(m.id).padStart(2, '0')}</span> {m.name}</td>
-                  <td>{tests}</td>
-                  <td>{rate === null ? <span className="muted">sem testes</span> : (
-                    <div className="row" style={{ flexWrap: 'nowrap' }}>
-                      <div className="bar" style={{ flex: 1 }}><div style={{ width: rate + '%', background: rate >= 70 ? 'var(--blue)' : rate >= 40 ? 'var(--amber)' : 'var(--red)' }} /></div>
-                      <b style={{ width: 42, textAlign: 'right' }}>{rate}%</b>
-                    </div>)}
-                  </td>
-                  <td>{avgPts === null ? <span className="muted">—</span> : <><b>{avgPts}</b> <span className="muted">/ {m.max}</span></>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <PageHead title="Análise do tapete / SWOT" desc="Antes de montar a estratégia, classifique cada missão: fácil, difícil, vantajosa ou desvantajosa. Uma missão pode ficar em mais de uma caixa." />
+      <ErrorBox error={tags.error} />
       <div className="swot">
-        {QUADS.map((q) => <Quadrant key={q.id} q={q} items={swot.rows.filter((i) => i.quadrant === q.id)} />)}
+        {CAIXAS.map((c) => <Caixa key={c.id} c={c} itens={tags.rows.filter((t) => t.tag === c.id)} />)}
       </div>
     </>
   );
 }
 
-function Quadrant({ q, items }) {
-  const [text, setText] = useState('');
-  async function add(e) {
-    e.preventDefault();
-    if (!text.trim()) return;
-    await insert('swot_items', { quadrant: q.id, text: text.trim() });
-    setText('');
-  }
+function Caixa({ c, itens }) {
+  const colocadas = new Set(itens.map((i) => i.mission_id));
+  const lista = itens.map((i) => ({ ...i, m: missionById[i.mission_id] })).filter((i) => i.m).sort((a, b) => a.mission_id - b.mission_id);
+  const pontos = lista.reduce((a, i) => a + i.m.max, 0);
+  const livres = missions.filter((m) => !colocadas.has(m.id));
+
   return (
-    <div className="card" style={{ borderTopColor: q.color }}>
-      <h2 style={{ marginBottom: 2 }}>{q.label}</h2>
-      <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>{q.hint}</div>
+    <div className="card" style={{ borderTopColor: c.color }}>
+      <h2 style={{ marginBottom: 2 }}>{c.label}</h2>
+      <div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{c.hint}</div>
+      <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>{lista.length} {lista.length === 1 ? 'missão' : 'missões'} · {pontos} pts</div>
       <ul>
-        {items.map((i) => (
-          <li key={i.id}><span>{i.text}</span><button className="icon-btn" title="Remover item" aria-label="Remover item" onClick={() => remove('swot_items', i.id)}><X size={14} /></button></li>
+        {lista.map((i) => (
+          <li key={i.id}>
+            <span>{nome(i.m)}</span>
+            <button className="icon-btn" title="Tirar da caixa" aria-label={`Tirar ${i.m.name} de ${c.label}`} onClick={() => remove('mission_tags', i.id)}><X size={14} /></button>
+          </li>
         ))}
+        {!lista.length && <li className="muted"><span>Nenhuma missão ainda.</span></li>}
       </ul>
-      <form className="row" style={{ marginTop: 8, flexWrap: 'nowrap' }} onSubmit={add}>
-        <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Adicionar item…" />
-        <button className="btn sm" title="Adicionar" aria-label={`Adicionar em ${q.label}`}><Plus size={14} /></button>
-      </form>
+      <select aria-label={`Adicionar missão em ${c.label}`} value="" disabled={!livres.length} style={{ marginTop: 8 }}
+        onChange={(e) => e.target.value && insert('mission_tags', { mission_id: Number(e.target.value), tag: c.id })}>
+        <option value="">{livres.length ? '+ Adicionar missão…' : 'Todas as missões já estão aqui'}</option>
+        {livres.map((m) => <option key={m.id} value={m.id}>{nome(m)}</option>)}
+      </select>
     </div>
   );
 }

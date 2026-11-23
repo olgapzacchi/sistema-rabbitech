@@ -69,13 +69,21 @@ test('Estratégia: saída com missões aparece marcada no mapa', async ({ page }
   expect(errors).toEqual([]);
 });
 
-test('Análise: adicionar item no SWOT', async ({ page }) => {
+test('Análise: classificar missões em fácil, difícil, vantajosa e desvantajosa', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/analise');
-  const forcas = page.locator('.swot .card', { hasText: 'Forças' });
-  await forcas.getByPlaceholder('Adicionar item…').fill('Robô rápido na M01');
-  await forcas.getByRole('button').last().click();
-  await expect(forcas.getByText('Robô rápido na M01')).toBeVisible();
+  const facil = page.locator('.swot .card').filter({ has: page.getByRole('heading', { name: 'Fácil', exact: true }) });
+  await facil.getByLabel('Adicionar missão em Fácil').selectOption({ label: 'M08 · Emaranhado · 30 pts' });
+  await expect(facil.getByText('M08 · Emaranhado · 30 pts')).toBeVisible();
+  await expect(facil).toContainText('1 missão · 30 pts');
+  // a mesma missão pode estar em outra caixa
+  const vant = page.locator('.swot .card').filter({ has: page.getByRole('heading', { name: 'Vantajosa', exact: true }) });
+  await vant.getByLabel('Adicionar missão em Vantajosa').selectOption({ label: 'M08 · Emaranhado · 30 pts' });
+  await expect(vant.getByText('M08 · Emaranhado · 30 pts')).toBeVisible();
+  // e some da lista de opções da caixa onde já está
+  await expect(facil.getByLabel('Adicionar missão em Fácil').locator('option', { hasText: 'M08' })).toHaveCount(0);
+  await facil.getByRole('button', { name: /Tirar Emaranhado de Fácil/ }).click();
+  await expect(facil).toContainText('Nenhuma missão ainda.');
   expect(errors).toEqual([]);
 });
 
