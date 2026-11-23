@@ -143,3 +143,18 @@ test('Aparência: escolher modo, cor e fundo e manter ao recarregar', async ({ p
   await expect(html).toHaveAttribute('data-cor', 'azul');
   expect(errors).toEqual([]);
 });
+
+test('Calculadora: rodada perfeita soma o máximo do caderno (450 de missões + 50 + 20 = 520)', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/calculadora');
+  // marca tudo que dá pontos (as caixas de restrição, em cinza, ficam desmarcadas)
+  const caixas = page.locator('label.cond:not(.muted) input[type=checkbox]');
+  for (let i = 0; i < await caixas.count(); i++) await caixas.nth(i).check();
+  for (const mais of await page.locator('.stepper button:last-child').all()) for (let i = 0; i < 5; i++) await mais.click(); // passa do limite de propósito
+  for (const sel of await page.locator('.mission select').all()) await sel.selectOption({ index: (await sel.locator('option').count()) - 1 }).catch(() => {});
+  await page.getByLabel(/Inspeção de equipamento/).check();
+  await expect(page.locator('.score-box')).toContainText('Missões 450 · precisão 50 · inspeção 20 · 15/15 missões');
+  await expect(page.locator('.score-box .big')).toHaveText('520');
+  await expect(page.locator('.mission', { hasText: 'Correria das Formigas' })).toContainText('de 40'); // 4 fragmentos de 10
+  expect(errors).toEqual([]);
+});

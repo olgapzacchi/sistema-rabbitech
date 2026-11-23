@@ -60,7 +60,7 @@ export default function Calculadora() {
                         <div className="stepper">
                           <button onClick={() => setVal(k, Math.max(0, (round.values[k] || 0) - 1))}>−</button>
                           <span>{round.values[k] || 0}</span>
-                          <button onClick={() => setVal(k, Math.min(3, (round.values[k] || 0) + 1))}>+</button>
+                          <button onClick={() => setVal(k, Math.min(c.count, (round.values[k] || 0) + 1))}>+</button>
                         </div>
                         <span>{c.label}</span>
                       </div>

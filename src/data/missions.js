@@ -14,9 +14,9 @@ export const missions = [
 {key:"leaf2",label:"Bônus: segunda folha removida (vale só se o inseto nunca saiu completamente do habitat)",points:20,requires:["leaf1"]}],special:"leaf"},
 {id:5,name:"Raízes que se Estendem",en:"Reaching Roots",emoji:"🌱",desc:"Estenda a raiz além da fronteira da floresta.",max:20,ne:true,criteria:[
 {key:"rootState",label:"Estado da raiz",points:0,choice:[["Não estendida",0],["Parcialmente estendida",10],["Completamente estendida",20]]}]},
-{id:6,name:"Correria das Formigas Cortadeiras",en:"Leafcutter Frenzy",emoji:"🐜",desc:"Leve a formiga ao ninho com fragmentos de folhas dentro dele.",max:30,criteria:[
+{id:6,name:"Correria das Formigas Cortadeiras",en:"Leafcutter Frenzy",emoji:"🐜",desc:"Leve a formiga ao ninho com fragmentos de folhas dentro dele.",max:40,criteria:[
 {key:"ant",label:"A formiga está tocando o ninho",points:0},
-{key:"fragments",label:"Fragmentos de folhas dentro do ninho (vale 10 cada; só contam se a formiga toca o ninho)",points:10,count:3,unit:"fragmento",requires:["ant"]}]},
+{key:"fragments",label:"Fragmentos de folhas dentro do ninho (vale 10 cada, são 4; só contam se a formiga toca o ninho)",points:10,count:4,unit:"fragmento",requires:["ant"]}]},
 {id:7,name:"Fungo Gigante",en:"Humongous Fungus",emoji:"🍄",desc:"Estenda o micélio e, se possível, conecte-o com a raiz da equipe adversária.",max:40,ne:true,criteria:[
 {key:"mycelium",label:"Micélio completamente estendido",points:20},
 {key:"bonusOur",label:"Bônus: micélio da nossa equipe conectado à raiz completamente estendida da equipe oposta",points:10,requires:["mycelium"]},

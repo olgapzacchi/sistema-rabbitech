@@ -13,7 +13,7 @@ function conditionPoints(round, m, c) {
   const check = (k) => !!v[k];
   const k = 'm' + m.id + '_' + c.key;
   if (c.count) {
-    let n = clamp(v[k] || 0, 0, 3);
+    let n = clamp(v[k] || 0, 0, c.count);
     if (c.nested) n = Math.min(n, v.m14_stationSeeds || 0);
     if (m.id === 6 && c.key === 'fragments' && !check('m6_ant')) n = 0;
     return n * c.points;
