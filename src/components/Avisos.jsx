@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { Trophy, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import { useTable } from '../lib/db.js';
 
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const dias = (s) => Math.round((new Date(`${s}T12:00:00`) - new Date(`${ymd(new Date())}T12:00:00`)) / 86400000);
+import { dias } from '../lib/datas.js';
+
 const quando = (n) => (n < 0 ? `atrasada há ${-n} dia${n === -1 ? '' : 's'}` : n === 0 ? 'hoje' : n === 1 ? 'amanhã' : `em ${n} dias`);
+const quandoEvento = (n) => (n < 0 ? 'em andamento' : quando(n));
+const SEM_AVISO = ['treino', 'recesso']; // acontecem toda semana ou por semanas: não viram alerta
 
 const PRAZO_DIAS = 3;
 const TORNEIO_DIAS = 14;
@@ -19,9 +21,9 @@ export default function Avisos() {
     const lista = [];
     tasks.rows.filter((t) => t.due_date && t.status !== 'done' && dias(t.due_date) <= PRAZO_DIAS)
       .forEach((t) => lista.push({ key: `t${t.id}`, tipo: 'prazo', titulo: t.title, n: dias(t.due_date) }));
-    events.rows.forEach((e) => {
+    events.rows.filter((e) => !SEM_AVISO.includes(e.kind) && dias(e.end_date || e.event_date) >= 0).forEach((e) => {
       const n = dias(e.event_date);
-      if (n >= 0 && n <= (e.kind === 'torneio' ? TORNEIO_DIAS : PRAZO_DIAS)) {
+      if (n <= (e.kind === 'torneio' ? TORNEIO_DIAS : PRAZO_DIAS)) {
         lista.push({ key: `e${e.id}`, tipo: 'evento', titulo: e.title, n, torneio: e.kind === 'torneio' });
       }
     });
@@ -39,8 +41,8 @@ export default function Avisos() {
         <div key={i.key} className="row" style={{ padding: '6px 0', borderTop: '1px solid var(--line)', flexWrap: 'nowrap' }}>
           {i.tipo === 'prazo' ? <ClipboardCheck size={14} aria-hidden="true" /> : <Trophy size={14} aria-hidden="true" />}
           <span className="ellipsis" style={{ flex: 1, fontWeight: 600 }}>{i.titulo}</span>
-          <span className={'tag ' + (i.n < 0 ? 'red' : i.n <= 1 ? 'amber' : '')}>
-            {i.tipo === 'prazo' ? 'Prazo' : i.torneio ? 'Torneio' : 'Evento'} · {quando(i.n)}
+          <span className={'tag ' + (i.tipo === 'prazo' && i.n < 0 ? 'red' : i.n >= 0 && i.n <= 1 ? 'amber' : '')}>
+            {i.tipo === 'prazo' ? 'Prazo' : i.torneio ? 'Torneio' : 'Evento'} · {i.tipo === 'prazo' ? quando(i.n) : quandoEvento(i.n)}
           </span>
         </div>
       ))}

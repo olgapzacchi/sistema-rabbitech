@@ -353,3 +353,10 @@ input[type=checkbox] { accent-color: var(--blue); width: 16px; height: 16px; }
 }
 .swatch[aria-checked=true] { border-color: var(--ink); }
 .swatch:hover { transform: scale(1.06); }
+
+/* ---------- contagem regressiva do torneio ---------- */
+.contagem { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.contagem > svg { color: var(--blue); flex-shrink: 0; }
+.contagem-num { font-size: 28px; font-weight: 700; line-height: 1.15; color: var(--blue); }
+.contagem-data { margin-left: auto; text-align: right; font-size: 13px; }
+@media (max-width: 700px) { .contagem-data { margin-left: 0; text-align: left; } }

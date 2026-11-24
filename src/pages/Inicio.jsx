@@ -4,6 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useTable, insert, update, remove } from '../lib/db.js';
 import { PageHead, Kpi, ErrorBox, initials, fmtDate } from '../components/ui.jsx';
 import Avisos from '../components/Avisos.jsx';
+import Contagem from '../components/Contagem.jsx';
+
+const DECIDIR = 'decidir'; // responsável ainda não escolhido (guardado na lista de responsáveis da tarefa)
 
 const COLS = [
   { id: 'todo', label: 'A fazer', dot: '#8a94a6' },
@@ -21,6 +24,7 @@ export default function Inicio() {
   const tasks = useTable('team_tasks');
   const members = useTable('members');
   const rounds = useTable('rounds');
+  const events = useTable('team_events');
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState('');
   const [dragOver, setDragOver] = useState(null);
@@ -68,6 +72,7 @@ export default function Inicio() {
         <button className="btn primary" onClick={() => setShowForm((v) => !v)}><Plus size={16} /> Nova tarefa</button>
       </PageHead>
       <ErrorBox error={tasks.error || members.error} />
+      <Contagem eventos={events.rows} />
       <Avisos />
 
       <div className="grid g4" style={{ marginBottom: 16 }}>
@@ -84,6 +89,7 @@ export default function Inicio() {
           <h2>Kanban</h2>
           <select aria-label="Filtrar por aluno" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ width: 'auto' }}>
             <option value="">Todos os alunos</option>
+            <option value={DECIDIR}>A decidir integrante</option>
             {members.rows.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
@@ -113,6 +119,7 @@ export default function Inicio() {
                     {t.description && <p>{t.description}</p>}
                     <div className="row" style={{ marginBottom: 6 }}>
                       {t.group_name && <span className="tag blue">{t.group_name}</span>}
+                      {(t.assignee_ids || []).includes(DECIDIR) && <span className="tag amber">A decidir integrante</span>}
                       {t.due_date && <span className={'tag ' + (late ? 'red' : '')}><CalendarDays size={12} />{fmtDate(t.due_date + 'T12:00')}</span>}
                     </div>
                     <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -170,9 +177,10 @@ export default function Inicio() {
 function TaskForm({ members, groups, onClose }) {
   const [f, setF] = useState({ title: '', description: '', due_date: '', group_name: '', assignee_ids: [] });
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
-  const toggle = (id) => set('assignee_ids', f.assignee_ids.includes(id) ? f.assignee_ids.filter((x) => x !== id) : [...f.assignee_ids, id]);
+  const toggle = (id) => set('assignee_ids', f.assignee_ids.includes(id) ? f.assignee_ids.filter((x) => x !== id) : [...f.assignee_ids.filter((x) => x !== DECIDIR), id]);
+  const decidir = () => setF((x) => ({ ...x, group_name: '', assignee_ids: x.assignee_ids.includes(DECIDIR) ? [] : [DECIDIR] }));
   function pickGroup(g) {
-    setF((x) => ({ ...x, group_name: g, assignee_ids: g ? members.filter((m) => m.group_name === g).map((m) => m.id) : x.assignee_ids }));
+    setF((x) => ({ ...x, group_name: g, assignee_ids: g ? members.filter((m) => m.group_name === g).map((m) => m.id) : x.assignee_ids.filter((id) => id !== DECIDIR) }));
   }
   async function save(e) {
     e.preventDefault();
@@ -198,6 +206,7 @@ function TaskForm({ members, groups, onClose }) {
       )}
       <div className="field">Atribuir a alunos
         <div className="row" style={{ marginTop: 4 }}>
+          <button type="button" aria-pressed={f.assignee_ids.includes(DECIDIR)} className={'btn sm' + (f.assignee_ids.includes(DECIDIR) ? ' primary' : '')} onClick={decidir}>A decidir integrante</button>
           {members.map((m) => (
             <button type="button" key={m.id} className={'btn sm' + (f.assignee_ids.includes(m.id) ? ' primary' : '')} onClick={() => toggle(m.id)}>{m.name}</button>
           ))}

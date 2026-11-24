@@ -166,3 +166,41 @@ test('Calculadora: rodada perfeita soma o máximo do caderno (450 de missões + 
   await expect(page.locator('.mission', { hasText: 'Correria das Formigas' })).toContainText('de 40'); // 4 fragmentos de 10
   expect(errors).toEqual([]);
 });
+
+test('Kanban: tarefa com "A decidir integrante" mostra a etiqueta e entra no filtro', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Nova tarefa' }).click();
+  await page.getByLabel('Título').fill('Programar saída 1');
+  const decidir = page.getByRole('button', { name: 'A decidir integrante' });
+  await decidir.click();
+  await expect(decidir).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Luiz Narciso' }).or(page.getByRole('button', { name: 'Luiz' }).first()).click(); // escolher um aluno tira o "a decidir"
+  await expect(decidir).toHaveAttribute('aria-pressed', 'false');
+  await decidir.click();
+  await page.getByRole('button', { name: 'Salvar tarefa' }).click();
+  await expect(page.locator('.kcard', { hasText: 'Programar saída 1' }).getByText('A decidir integrante')).toBeVisible();
+  await page.getByLabel('Filtrar por aluno').selectOption('decidir');
+  await expect(page.locator('.kcard', { hasText: 'Programar saída 1' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('Calendário: evento de vários dias aparece em cada dia e a contagem do Início o mostra', async ({ page }) => {
+  const errors = watchErrors(page);
+  const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const hoje = new Date();
+  const fim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 2);
+  await page.goto('/calendario');
+  await page.getByRole('button', { name: 'Evento' }).click();
+  await page.getByLabel('Nome do evento').fill('Regional de teste');
+  await page.getByLabel('Tipo').selectOption('torneio');
+  await page.getByLabel(/Até o dia/).fill(ymd(fim));
+  await page.getByRole('button', { name: 'Salvar' }).click();
+  // o evento aparece no dia de hoje e também 2 dias depois
+  await expect(page.getByRole('status')).toContainText('Regional de teste');
+  await page.getByRole('button', { name: new RegExp(`^${fim.getDate()} de .*Regional de teste`) }).click();
+  await expect(page.locator('.card', { hasText: 'Regional de teste' }).getByText(/Torneio · .* a |Torneio · .* e /).first()).toBeVisible();
+  await page.goto('/');
+  await expect(page.getByRole('status')).toContainText('Dia 1 de 3');
+  expect(errors).toEqual([]);
+});
